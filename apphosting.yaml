@@ -1,0 +1,37 @@
+runConfig:
+  cpu: 1
+  memoryMiB: 512
+  concurrency: 80
+
+env:
+  # API Keys
+  - variable: GEMINI_API_KEYS
+    value: AIzaSyBuxFVquI5x0rVqM-FSiAhsGZNCTWkOhlg,AIzaSyCSQLOGbZBhZUK44fCkFRS4eiuKu782L7U,AIzaSyCPivjmDRD3PiGaN878Tmx_GcCAHzR0w1g,AIzaSyBh-5LUzMVPLHlxX5ecs0OdeXc4IqH9uYA
+  - variable: SERPER_API_KEY
+    value: 5aaf48a7b1926bf3d6d8f252fe8330ce541ac4f7
+  - variable: FIREBASE_PRIVATE_KEY
+    value: "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC5Ymv2bNlYIVGg\n7re2DU6GvjSzA/i1Dg67sdRPgpEVWrQ2rDzZ96++lZyYaFOUru7l41geHUxEb7im\n2jVtF9Xynf3VUnPiADyFPqgcRDSk/3ZBH0YthDpC+BbzcKejuyv+XHxwEK92mbGh\n+ByjrbjB50QMMuMTq/JNEApRE7lrIb8Hd0cAIi5ZvspkjWVzG0r8KIkHeBT9zEvv\njdk0+CCCiZKkYSRVAu0XGgNO5MN2ZCKJSzG+jyVb6aeRensMTdJ+At5+4dy3AY3Y\nQLQKRIchC3thzdDmYr+A5bySzQwWzrpIB07CpD/29IcfjRXDaqjoU8GGNfCWcv9X\nQP1jbnKhAgMBAAECggEABv3k1Wn+FrAwGjl1LwjVoFoRwdfC9RkpRC5qKE0ptUfV\n2LSTMMZqxlZaX4NU3pDJWxcqO4lBVzX4keA9JrD7LKH5tr2tchn/orOYK1xicy5F\niH8NMEFfbSdavj23MIMHTaWaDPVp9c6xlwTji/5BOyhle8xMQLdodWqvumC44czL\naCdLBGqLtor+zszSCk80LnqhPCtFlEEkvoVD0FE3qIL/maXr1bZNEYC4s/+qJwpL\n5dy0umicnBVLZ4NKa0NQSv/Y8nNufGoAUQCpG6iDWxCnaUgvA1PsNCdDbZpd4B+t\n/4CvKWikt1iVWNNmu26OQLPt+m1StxGOkSzjBI1g7QKBgQDyop04sYzI0yaSYdRd\nQk3OBcofqWHUX05SJrTLIRmOvC4vlNpEwNse0X7REp1NVRUy+jjXaxencwPlyzHm\n+/wkp0DTW9bOSgbqdUJuBS1VOwQCZ4zPqjm6WQvvdR25rTBV+JNQ4QZNlfLmGRFR\nkQNg9DX1M9wy95XwJt5jzf3MawKBgQDDmISSs4HdXg2YOxD/2CreNgTOEa79WzMQ\nyK/WLteAOVjmKXqJOCuMMeSY+DHYsdQbS+6/dzXyuQKoyWdFUgoI7i3Fyd3jEGur\n/fxBrK4Rj+T/+ao/8jxe3mhz7TmuaI3Cv521j2H5uWM3Lh7v3WEXDPH5MnAun5RE\ngkW/3BKAIwKBgBO332sSEsznTAUtaiLCFqydj9WO4GJv9F98wciYQgl1hZNcV3iq\n66PPhqzbBGmadoSUDTaEf4GeOTzdjIqnA9C+vufuWMCfB3zaVrG2Pf7lMug3Hhxq\nSxK31d55+BZ02q7B6sbx4p8/hmPouZ2VWV7xucjZlBWYRVkk74HQ5cVNAoGBAJZc\nDK3pqI9P2guIfIzw1CN2S0NOfMLu9NaWL/XqlGdRrnFguX363B8ty5l8UnVOXsuN\nF7/AGIy6hLzT9rtnUaeD0VQW1qfS27Kf0Od7o2SExXmxp5r40EftmUZkus7EORXY\nz5fe3WZniUnF/qpN+HEL1ofGqk5tBkGUE6JlvyMZAoGBAN+x5Tevmdy15fr0kmRz\nTmyl/l2TAscreYd1iUByhYS2o3szi43iKXMjXKgM0D7+y+PGkBgsM+bWgmBnMtmZ\nCmePQB77ybgT5DiwsCZ7si8SBm4hAq3vbK0Q0LW/LfvGXq9ehQQ9wRhNUSsoEJHU\nwMUMReXU5H2lUNKOr2FpRyEv\n-----END PRIVATE KEY-----\n"
+
+  # Firebase Client SDK
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: AIzaSyCuf6PrCla9wfaO1puN5_XGmoA-8GTGmLQ
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: seo-content-e8aab.firebaseapp.com
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: seo-content-e8aab
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: seo-content-e8aab.firebasestorage.app
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "496023370202"
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: "1:496023370202:web:c08e7626b71c291afbe8e3"
+  - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+    value: G-5HF6RTEZRE
+
+  # Firebase Admin SDK (server-side)
+  - variable: FIREBASE_CLIENT_EMAIL
+    value: firebase-adminsdk-fbsvc@seo-content-e8aab.iam.gserviceaccount.com
+
+  # Base URL (auto-detected by Firebase App Hosting)
+  - variable: NEXT_PUBLIC_BASE_URL
+    value: https://seo-content-e8aab.web.app
