@@ -50,36 +50,49 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No URLs provided' }, { status: 400 });
     }
 
-    // Extract headings from each URL — ALL in parallel for speed
-    const fetchResults = await Promise.allSettled(
-      urls.map(async (url): Promise<CompetitorOutline> => {
-        try {
-          // F8: Try Jina first (10s timeout)
-          const jinaHeadings = await extractHeadingsViaJina(url);
-          if (jinaHeadings && jinaHeadings.length > 0) {
-            return { url, headings: jinaHeadings };
+    // Extract headings from each URL — Process in batches of 3 to avoid Jina AI rate limits
+    const outlines: CompetitorOutline[] = [];
+    const batchSize = 3;
+
+    for (let i = 0; i < urls.length; i += batchSize) {
+      const batch = urls.slice(i, i + batchSize);
+
+      const batchResults = await Promise.allSettled(
+        batch.map(async (url): Promise<CompetitorOutline> => {
+          try {
+            // F8: Try Jina first (10s timeout)
+            const jinaHeadings = await extractHeadingsViaJina(url);
+            if (jinaHeadings && jinaHeadings.length > 0) {
+              return { url, headings: jinaHeadings };
+            }
+            // Fallback: direct HTML fetch + Cheerio
+            const res = await fetch(url, {
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Accept': 'text/html,application/xhtml+xml',
+              },
+              signal: AbortSignal.timeout(10000),
+            });
+            if (res.ok) {
+              const html = await res.text();
+              return { url, headings: extractHeadings(html) };
+            }
+            return { url, headings: [] };
+          } catch {
+            return { url, headings: [] };
           }
-          // Fallback: direct HTML fetch + Cheerio
-          const res = await fetch(url, {
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-              'Accept': 'text/html,application/xhtml+xml',
-            },
-            signal: AbortSignal.timeout(10000),
-          });
-          if (res.ok) {
-            const html = await res.text();
-            return { url, headings: extractHeadings(html) };
-          }
-          return { url, headings: [] };
-        } catch {
-          return { url, headings: [] };
-        }
-      })
-    );
-    const outlines: CompetitorOutline[] = fetchResults.map(r =>
-      r.status === 'fulfilled' ? r.value : { url: '', headings: [] }
-    );
+        })
+      );
+
+      outlines.push(...batchResults.map(r =>
+        r.status === 'fulfilled' ? r.value : { url: '', headings: [] }
+      ));
+
+      // Delay slightly between batches to respect rate limits
+      if (i + batchSize < urls.length) {
+        await new Promise(resolve => setTimeout(resolve, 800));
+      }
+    }
 
     const validOutlines = outlines.filter(o => o.headings.length > 0);
 

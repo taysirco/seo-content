@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Activity, Copy, Globe, Check } from 'lucide-react';
+import { Loader2, Activity, Copy, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface InternalLinkingSuggestionsProps {

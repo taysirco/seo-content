@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Share2, Copy, Check, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { callGemini } from '@/lib/ai-client';
 
 interface ContentRepurposerProps {
     keyword: string;
@@ -48,15 +47,21 @@ export function ContentRepurposer({ keyword, content }: ContentRepurposerProps) 
       `;
             // We pass a truncated content to avoid token limits
             const context = content.slice(0, 10000).replace(/<[^>]+>/g, ' ');
-            const response = await callGemini({
-                systemInstruction: 'You are an expert content repurposer. Convert article content into different social media formats. Return valid JSON array.',
-                userPrompt: prompt + `\n\nArticle Content:\n${context}`,
-                jsonMode: true,
+            const response = await fetch('/api/ai/tool', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    systemInstruction: 'You are an expert content repurposer. Convert article content into different social media formats. Return valid JSON array.',
+                    userPrompt: prompt + `\n\nArticle Content:\n${context}`,
+                    jsonMode: true,
+                }),
             });
-
-            const parsed = JSON.parse(response);
+            if (!response.ok) throw new Error('Failed to generate');
+            const data = await response.json();
+            const parsed = JSON.parse(data.result);
             setOutputs(Array.isArray(parsed) ? parsed : []);
-        } catch {
+        } catch (error) {
+            console.error(error);
             toast.error('Failed to generate social content');
         } finally {
             setLoading(false);

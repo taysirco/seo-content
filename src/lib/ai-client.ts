@@ -16,7 +16,7 @@ function backoffWithJitter(attempt: number, baseMs = 1000, maxMs = 30000): numbe
  * single-quoted keys, truncated objects, and other common Gemini issues.
  * Tries 7 strategies before giving up.
  */
-function extractJSON(text: string): string {
+export function extractJSON(text: string): string {
   // Strategy 0: Strip Gemini 2.5 thinking preamble (text before first { or [)
   const thinkStripped = text.replace(/^[\s\S]*?(?=\{|\[)/, '');
   if (thinkStripped !== text && thinkStripped.length > 0) {
@@ -293,6 +293,7 @@ export async function* streamGemini({
 
   let lastError: Error | null = null;
   const maxAttempts = apiKeyPool.size + 1;
+  let yieldedAnything = false;
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     // Per-key rate limit applied after key selection
@@ -333,6 +334,7 @@ export async function* streamGemini({
           if (timedOut) throw new Error('STREAM_TIMEOUT');
           const text = chunk.text();
           if (text) {
+            yieldedAnything = true;
             yield text;
           }
         }
@@ -341,6 +343,12 @@ export async function* streamGemini({
         return; // Success — exit the retry loop
       } catch (streamErr) {
         clearTimeout(streamTimer);
+        // If we already sent partial data, we CANNOT retry silently because the client 
+        // will receive appended duplicate content. We must abort and let the caller handle it.
+        if (yieldedAnything) {
+          console.warn(`[streamGemini] Stream dropped mid-way. Cannot retry safely. Throwing.`);
+          throw streamErr;
+        }
         throw streamErr;
       }
     } catch (error: unknown) {
@@ -373,6 +381,14 @@ export async function* streamGemini({
         const wait500 = backoffWithJitter(attempt, 3000, 20000);
         console.warn(`[streamGemini] 500/INTERNAL. Backoff ${Math.round(wait500)}ms (attempt ${attempt + 1}/${maxAttempts})`);
         await new Promise(resolve => setTimeout(resolve, wait500));
+        continue;
+      }
+
+      // Generic network error (fetch failed, aborted, timeout) before yielding anything
+      if (msg.includes('fetch') || msg.includes('network') || msg.includes('timeout') || msg.toLowerCase().includes('abort')) {
+        const waitNet = backoffWithJitter(attempt, 2000, 10000);
+        console.warn(`[streamGemini] Network/Stream error (${msg}). Backoff ${Math.round(waitNet)}ms (attempt ${attempt + 1}/${maxAttempts})`);
+        await new Promise(resolve => setTimeout(resolve, waitNet));
         continue;
       }
 

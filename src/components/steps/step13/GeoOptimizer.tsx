@@ -131,8 +131,8 @@ export function GeoOptimizer({ content, keyword }: GeoOptimizerProps) {
             <div className="space-y-2">
                 {opportunities.map((op, i) => (
                     <div key={i} className={`text-[11px] p-2.5 rounded-md border flex flex-col gap-1.5 ${op.status === 'found'
-                            ? 'bg-green-50/50 border-green-100 dark:bg-green-900/10 dark:border-green-900/30'
-                            : 'bg-red-50/50 border-red-100 dark:bg-red-900/10 dark:border-red-900/30'
+                        ? 'bg-green-50/50 border-green-100 dark:bg-green-900/10 dark:border-green-900/30'
+                        : 'bg-red-50/50 border-red-100 dark:bg-red-900/10 dark:border-red-900/30'
                         }`}>
                         <div className="flex items-center justify-between">
                             <span className="font-semibold">{op.type}</span>

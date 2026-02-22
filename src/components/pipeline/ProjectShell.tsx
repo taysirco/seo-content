@@ -9,13 +9,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { Step01CompetitorResearch } from '@/components/steps/Step01CompetitorResearch';
 import { Step02OutlineCreation } from '@/components/steps/Step02OutlineCreation';
 import { Step03ContentExtraction } from '@/components/steps/Step03ContentExtraction';
-import { Step04EntitiesCompetitors } from '@/components/steps/Step04EntitiesCompetitors';
-import { Step05EntitiesAI } from '@/components/steps/Step05EntitiesAI';
-import { Step06NGrams } from '@/components/steps/Step06NGrams';
-import { Step07NLPKeywords } from '@/components/steps/Step07NLPKeywords';
-import { Step08SkipGrams } from '@/components/steps/Step08SkipGrams';
-import { Step09AutoSuggest } from '@/components/steps/Step09AutoSuggest';
-import { Step10Grammar } from '@/components/steps/Step10Grammar';
+import { Step04SemanticEngine } from '@/components/steps/Step04SemanticEngine';
 import { Step11SEORules } from '@/components/steps/Step11SEORules';
 import { Step12AIInstructions } from '@/components/steps/Step12AIInstructions';
 import { Step13FinalContent } from '@/components/steps/Step13FinalContent';
@@ -68,16 +62,10 @@ const STEP_COMPONENTS: Record<number, React.ComponentType> = {
   1: Step01CompetitorResearch,
   2: Step02OutlineCreation,
   3: Step03ContentExtraction,
-  4: Step04EntitiesCompetitors,
-  5: Step05EntitiesAI,
-  6: Step06NGrams,
-  7: Step07NLPKeywords,
-  8: Step08SkipGrams,
-  9: Step09AutoSuggest,
-  10: Step10Grammar,
-  11: Step11SEORules,
-  12: Step12AIInstructions,
-  13: Step13FinalContent,
+  4: Step04SemanticEngine,
+  5: Step11SEORules,
+  6: Step12AIInstructions,
+  7: Step13FinalContent,
 };
 
 function PipelineSummaryBar() {
@@ -188,7 +176,7 @@ export function ProjectShell() {
       if (e.key === 'ArrowLeft') {
         e.preventDefault();
         const step = usePipelineStore.getState().currentStep;
-        if (step < 13) setCurrentStep(step + 1);
+        if (step < 7) setCurrentStep(step + 1);
         return;
       }
     };
@@ -253,73 +241,7 @@ export function ProjectShell() {
     input.click();
   };
 
-  // ─── Batch process all remaining steps ───
-  const [batching, setBatching] = useState(false);
-  const [batchText, setBatchText] = useState('');
 
-  const handleBatchProcess = async () => {
-    const store = usePipelineStore.getState();
-    if (!store.keyword) { toast.error('Enter keyword first'); return; }
-    setBatching(true);
-
-    const steps: { num: number; label: string; needsData: boolean; endpoint: string; body: () => Record<string, unknown>; setter: (data: Record<string, unknown>) => void }[] = [
-      {
-        num: 5, label: 'AI Entities', needsData: !store.step5,
-        endpoint: '/api/ai/entities',
-        body: () => ({ keyword: store.keyword, mode: 'generate' }),
-        setter: (d) => usePipelineStore.getState().setStep5(d.aiEntities as Parameters<typeof store.setStep5>[0]),
-      },
-      ...(store.step3 ? [{
-        num: 6, label: 'N-Grams', needsData: !store.step6,
-        endpoint: '/api/ai/ngrams',
-        body: () => ({ keyword: store.keyword, contents: store.step3!.contents.map(c => c.text) }),
-        setter: (d: Record<string, unknown>) => usePipelineStore.getState().setStep6(d as unknown as Parameters<typeof store.setStep6>[0]),
-      }] : []),
-      {
-        num: 8, label: 'Skip-Grams', needsData: !store.step8,
-        endpoint: '/api/ai/skip-grams',
-        body: () => ({ keyword: store.keyword }),
-        setter: (d) => usePipelineStore.getState().setStep8(d.skipGrams as string[], {
-          word_sense_disambiguation: d.word_sense_disambiguation as { sense: string; dominant_words: string[] }[] | undefined,
-          document_summarization: d.document_summarization as string[] | undefined,
-          keyword_extraction: d.keyword_extraction as string[] | undefined,
-        }),
-      },
-      {
-        num: 9, label: 'Suggestions', needsData: !store.step9,
-        endpoint: '/api/autocomplete',
-        body: () => ({ keyword: store.keyword }),
-        setter: (d) => usePipelineStore.getState().setStep9(d.keywords as string[]),
-      },
-      {
-        num: 10, label: 'Grammar', needsData: !store.step10,
-        endpoint: '/api/ai/grammar',
-        body: () => ({ keyword: store.keyword }),
-        setter: (d) => usePipelineStore.getState().setStep10(d.grammar as Parameters<typeof store.setStep10>[0]),
-      },
-    ];
-
-    const pending = steps.filter(s => s.needsData);
-    if (pending.length === 0) { toast.success('All independent steps complete'); setBatching(false); return; }
-
-    for (let i = 0; i < pending.length; i++) {
-      const s = pending[i];
-      setBatchText(`Processing ${s.label} (${i + 1}/${pending.length})...`);
-      try {
-        const res = await fetch(s.endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(s.body()),
-        });
-        const data = await res.json();
-        if (res.ok) s.setter(data);
-      } catch { /* continue on error */ }
-    }
-
-    toast.success(`Processed ${pending.length} steps`);
-    setBatching(false);
-    setBatchText('');
-  };
 
   const StepComponent = STEP_COMPONENTS[currentStep] || Step01CompetitorResearch;
 
@@ -345,21 +267,7 @@ export function ProjectShell() {
             )}
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1 text-xs hidden sm:flex"
-                  onClick={handleBatchProcess}
-                  disabled={batching}
-                >
-                  {batching ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
-                  {batching ? batchText : 'Batch Process'}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Process steps 5, 8, 9, 10 in one batch</TooltipContent>
-            </Tooltip>
+
             {/* D11-4: API Key Pool Status Widget */}
             <KeyPoolWidget />
             <Tooltip>

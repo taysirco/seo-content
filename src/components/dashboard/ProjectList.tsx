@@ -128,35 +128,36 @@ export function ProjectList({ projects, loading, onDelete }: ProjectListProps) {
                         <div key={project.id} className="rounded-xl border bg-card p-4 hover:border-primary/30 transition-colors">
                             <div className="flex items-center justify-between">
                                 <Link href={`/project/${project.id}`} className="flex-1 flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-indigo-500/20 flex items-center justify-center shrink-0 border border-blue-500/20 shadow-sm">
                                         {project.logoUrl ? (
                                             // eslint-disable-next-line @next/next/no-img-element
-                                            <img src={project.logoUrl} alt="" className="w-7 h-7 rounded object-cover" />
+                                            <img src={project.logoUrl} alt="" className="w-8 h-8 rounded object-cover" />
                                         ) : (
-                                            <FolderOpen className="w-5 h-5 text-blue-500" />
+                                            <FolderOpen className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
                                         )}
                                     </div>
                                     <div className="min-w-0 flex-1">
-                                        <div className="flex items-center gap-2">
-                                            <p className="font-semibold truncate">{project.keyword || 'Untitled'}</p>
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <p className="font-bold text-base truncate text-foreground tracking-tight">{project.keyword || 'Untitled'}</p>
                                             {project.clientName && (
-                                                <Badge variant="default" className="text-[9px] shrink-0">{project.clientName}</Badge>
+                                                <Badge variant="default" className="text-[10px] shrink-0 font-medium tracking-wide bg-primary/90 hover:bg-primary">{project.clientName}</Badge>
                                             )}
                                         </div>
-                                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                        <div className="flex items-center gap-1.5 flex-wrap">
                                             {project.domain && (
-                                                <Badge variant="outline" className="text-[9px]" dir="ltr">{project.domain}</Badge>
+                                                <Badge variant="outline" className="text-[9px] border-primary/20 text-primary bg-primary/5" dir="ltr">{project.domain}</Badge>
                                             )}
                                             {project.city && (
-                                                <Badge variant="outline" className="text-[9px]">{project.city}</Badge>
+                                                <Badge variant="outline" className="text-[9px] border-orange-500/20 text-orange-600 bg-orange-500/5">{project.city}</Badge>
                                             )}
-                                            <Badge variant="secondary" className="text-[9px]">
-                                                Step {project.currentStep}/13
+                                            <Badge variant="secondary" className={`text-[9px] font-semibold tracking-wide ${project.currentStep === 13 ? 'bg-green-500/20 text-green-700 dark:text-green-400 border border-green-500/30' : 'bg-muted/50 text-muted-foreground'}`}>
+                                                {project.currentStep === 13 ? '✅ Content Ready' : `Step ${project.currentStep}/13`}
                                             </Badge>
+
                                             {project.tags?.map(t => (
-                                                <Badge key={t} variant="secondary" className="text-[8px] bg-primary/5">{t}</Badge>
+                                                <Badge key={t} variant="secondary" className="text-[9px] bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">{t}</Badge>
                                             ))}
-                                            <span className="text-[9px] text-muted-foreground">
+                                            <span className="text-[10px] text-muted-foreground/70 font-medium ml-1">
                                                 {relativeTime(project.updatedAt)}
                                             </span>
                                         </div>

@@ -9,7 +9,8 @@ CRITICAL RULES:
 6. Remove duplicates while keeping the most informative, specific version.
 7. DEPTH IS KING: The merged outline must have MORE H2 sections than any single competitor, and each H2 should have H3 sub-sections.
 8. Ensure every H2 heading is specific and actionable—avoid vague or generic headings. Replace with the most specific version from any source.
-9. ORDER BY SEARCH INTENT: Put "what is" and definition sections first, then "how to" and practical sections, then comparisons and alternatives, then advanced/niche topics, then FAQ.`;
+9. ORDER BY SEARCH INTENT: Put "what is" and definition sections first, then "how to" and practical sections, then comparisons and alternatives, then advanced/niche topics, then FAQ.
+10. NO COMPETITOR LEFT BEHIND: You MUST ensure that unique, valuable headings from ALL provided sources are included in the final merge. Do not lazily skip sources.`;
 
 export function buildOutlineMergePrompt(outlines: { url: string; headings: { level: number; text: string }[] }[]): string {
   const formattedOutlines = outlines.map((o, i) => {
@@ -20,7 +21,8 @@ export function buildOutlineMergePrompt(outlines: { url: string; headings: { lev
   }).join('\n\n');
 
   return `Combine these article outlines into one comprehensive outline.
-ONLY use headings from the provided sources:
+ONLY use headings from the provided sources.
+CRITICAL: You are receiving outlines from ${outlines.length} competitors. You MUST extract the unique value from EVERY SINGLE ONE of these ${outlines.length} sources. Do not ignore any source!
 
 ${formattedOutlines}
 

@@ -37,8 +37,7 @@ export function ExportActions({ content, keyword, store }: ExportActionsProps) {
         setTimeout(() => setCopiedType(null), 2000);
     };
 
-    const handleDownloadHTML = () => {
-        // S13a: Build Schema JSON-LD for export
+    const getArticleSchema = () => {
         const title = store.step2?.merged?.title || keyword;
         const today = new Date().toISOString().split('T')[0];
         const entities: string[] = [];
@@ -59,7 +58,8 @@ export function ExportActions({ content, keyword, store }: ExportActionsProps) {
         const clientName = store.clientMeta?.clientName || 'المؤلف';
         const clientDomain = store.clientMeta?.domain || '';
         const clientLogo = store.clientMeta?.logoUrl || '';
-        const articleSchema = {
+
+        return {
             '@context': 'https://schema.org', '@type': 'Article',
             headline: title, description: `دليل شامل عن ${keyword}`,
             datePublished: today, dateModified: today,
@@ -75,6 +75,25 @@ export function ExportActions({ content, keyword, store }: ExportActionsProps) {
             mentions: uniqueEntities.slice(10, 20).map(buildEntitySameAs),
             keywords: keyword,
         };
+    };
+
+    const handleDownloadJSONLD = () => {
+        const schema = getArticleSchema();
+        const blob = new Blob([JSON.stringify(schema, null, 2)], { type: 'application/json;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${keyword || 'article'}-schema.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    const handleDownloadHTML = () => {
+        const title = store.step2?.merged?.title || keyword;
+        const articleSchema = getArticleSchema();
+        const clientName = store.clientMeta?.clientName || 'المؤلف';
+        const clientDomain = store.clientMeta?.domain || '';
+        const clientLogo = store.clientMeta?.logoUrl || '';
 
         // Extract FAQ Q&A pairs
         const faqPairs: { q: string; a: string }[] = [];
@@ -125,41 +144,44 @@ export function ExportActions({ content, keyword, store }: ExportActionsProps) {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${title}</title>
 <style>
-body { font-family: 'IBM Plex Sans Arabic', sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem; line-height: 1.8; color: #1a1a1a; }
-h1 { font-size: 2rem; border-bottom: 2px solid #e5e5e5; padding-bottom: 0.5rem; }
-h2 { font-size: 1.5rem; margin-top: 2rem; border-bottom: 1px solid #e5e5e5; padding-bottom: 0.25rem; }
-h3 { font-size: 1.25rem; margin-top: 1.5rem; }
-p { margin-bottom: 1rem; }
-ul, ol { padding-right: 1.5rem; margin-bottom: 1rem; }
-blockquote { border-right: 4px solid #3b82f6; padding: 0.75rem 1rem; margin: 1rem 0; background: #f0f7ff; }
-table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
-th, td { border: 1px solid #e5e5e5; padding: 0.5rem; text-align: right; }
-th { background: #f5f5f5; font-weight: 600; }
-.quick-answer { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 1rem; margin: 1rem 0; }
-.quick-answer strong { color: #166534; }
-.sge-bait-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 1rem; margin: 1rem 0; border-right: 4px solid #3b82f6; }
-.sge-bait-box strong { color: #1d4ed8; }
-.comparison-table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-.comparison-table caption { font-weight: 600; margin-bottom: 0.5rem; text-align: right; }
-.comparison-table th { background: #1e40af; color: white; padding: 0.75rem; text-align: right; }
-.comparison-table td { padding: 0.75rem; border-bottom: 1px solid #e5e7eb; }
-.comparison-table tr:nth-child(even) { background: #f9fafb; }
-.mermaid-diagram { background: #fafafa; border: 1px solid #e5e5e5; border-radius: 8px; padding: 1rem; margin: 1.5rem 0; text-align: center; }
-.seo-meta { background: #fefce8; border: 1px solid #fde68a; border-radius: 8px; padding: 1rem; margin: 2rem 0; }
+:root { --primary: #2563eb; --text: #1e293b; --bg: #ffffff; --surface: #f8fafc; --border: #e2e8f0; }
+body { font-family: 'IBM Plex Sans Arabic', system-ui, -apple-system, sans-serif; max-width: 850px; margin: 0 auto; padding: 2rem 1.5rem; line-height: 1.8; color: var(--text); background: var(--bg); font-size: 1.125rem; }
+h1 { font-size: 2.25rem; font-weight: 800; border-bottom: 3px solid var(--primary); padding-bottom: 0.75rem; margin-bottom: 2rem; color: #0f172a; line-height: 1.3; }
+h2 { font-size: 1.75rem; font-weight: 700; margin-top: 3rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; color: #0f172a; }
+h3 { font-size: 1.35rem; font-weight: 600; margin-top: 2rem; margin-bottom: 1rem; color: #1e293b; }
+p { margin-bottom: 1.25rem; }
+ul, ol { padding-right: 2rem; margin-bottom: 1.5rem; }
+li { margin-bottom: 0.5rem; }
+blockquote { border-right: 4px solid var(--primary); padding: 1rem 1.25rem; margin: 2rem 0; background: #eff6ff; border-radius: 0.5rem 0 0 0.5rem; font-style: italic; color: #1e40af; }
+table { width: 100%; border-collapse: separate; border-spacing: 0; margin: 2rem 0; border: 1px solid var(--border); border-radius: 0.5rem; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+th, td { border-bottom: 1px solid var(--border); padding: 1rem; text-align: right; }
+th { background: #f1f5f9; font-weight: 700; color: #334155; }
+tr:last-child td { border-bottom: none; }
+tr:nth-child(even) { background: #f8fafc; }
+.quick-answer { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 0.75rem; padding: 1.5rem; margin: 2rem 0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+.quick-answer strong { color: #166534; font-size: 1.1rem; display: block; margin-bottom: 0.5rem; }
+.sge-bait-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 0.75rem; padding: 1.5rem; margin: 2rem 0; border-right: 4px solid var(--primary); }
+.sge-bait-box strong { color: #1d4ed8; font-size: 1.1rem; display: block; margin-bottom: 0.5rem; }
+.mermaid-diagram { background: #fafafa; border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.5rem; margin: 2rem 0; text-align: center; }
+a { color: var(--primary); text-decoration: none; font-weight: 500; border-bottom: 1px solid transparent; transition: all 0.2s; }
+a:hover { border-bottom-color: var(--primary); }
+@media (max-width: 640px) { body { padding: 1rem; font-size: 1rem; } h1 { font-size: 1.75rem; } h2 { font-size: 1.5rem; } }
 </style>
 <script type="application/ld+json">
 ${JSON.stringify(articleSchema, null, 2)}
 </script>${faqSchemaBlock}${howToSchemaBlock}
 </head>
 <body>
-${clientName !== 'المؤلف' || clientLogo ? `<header style="display:flex;align-items:center;gap:1rem;padding:1rem 0;border-bottom:2px solid #e5e5e5;margin-bottom:2rem;">
-${clientLogo ? `<img src="${clientLogo}" alt="${clientName}" style="height:48px;width:auto;border-radius:8px;">` : ''}
+${clientName !== 'المؤلف' || clientLogo ? `<header style="display:flex;align-items:center;gap:1rem;padding:1.5rem;background:#f8fafc;border-radius:1rem;margin-bottom:2.5rem;border:1px solid #e2e8f0;">
+${clientLogo ? `<img src="${clientLogo}" alt="${clientName}" style="height:56px;width:auto;border-radius:0.5rem;box-shadow:0 1px 2px rgba(0,0,0,0.1);">` : ''}
 <div>
-<strong style="font-size:1.1rem;">${clientName}</strong>
-${clientDomain ? `<br><a href="https://${clientDomain}" style="color:#3b82f6;font-size:0.85rem;text-decoration:none;">${clientDomain}</a>` : ''}
+<strong style="font-size:1.25rem;color:#0f172a;display:block;margin-bottom:0.25rem;">${clientName}</strong>
+${clientDomain ? `<a href="https://${clientDomain}" style="color:#64748b;font-size:0.9rem;text-decoration:none;">${clientDomain}</a>` : ''}
 </div>
 </header>` : ''}
+<article>
 ${content}
+</article>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 <script>document.addEventListener('DOMContentLoaded',function(){if(document.querySelector('.mermaid')){mermaid.initialize({startOnLoad:true,theme:'default'});}});</script>
 </body>
@@ -259,6 +281,10 @@ table{width:100%;border-collapse:collapse;margin:1rem 0}th,td{border:1px solid #
                 {copiedType === 'md' ? 'تم' : 'Markdown'}
             </Button>
             <Separator orientation="vertical" className="h-6 mx-1" />
+            <Button variant="outline" size="sm" onClick={handleDownloadJSONLD} className="gap-1 text-xs">
+                <Code className="w-3 h-3" />
+                JSON-LD
+            </Button>
             <Button variant="outline" size="sm" onClick={handleDownloadHTML} className="gap-1 text-xs">
                 <Download className="w-3 h-3" />
                 HTML

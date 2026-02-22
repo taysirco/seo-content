@@ -9,7 +9,13 @@ interface CompetitorGapAnalysisProps {
     store: {
         step2?: {
             competitors?: { url: string; headings: { level: number; text: string }[] }[];
-            merged?: { headings: { level: number; text: string }[] };
+            merged?: {
+                headings: { level: number; text: string }[];
+                gapAnalysis?: {
+                    hiddenObjections?: { fearOrObjection: string; suggestedH2: string }[];
+                    counterNarrative?: { standardAdvice: string; contrarianTake: string; suggestedH2: string };
+                };
+            };
         } | null;
     };
 }
@@ -131,9 +137,38 @@ export function CompetitorGapAnalysis({ content, store }: CompetitorGapAnalysisP
                         </div>
                     )}
 
+                    {/* Weapon 1: Deep Intent / Hidden Objections */}
+                    {store.step2?.merged?.gapAnalysis?.hiddenObjections && store.step2.merged.gapAnalysis.hiddenObjections.length > 0 && (
+                        <div className="space-y-1.5 mt-2">
+                            <p className="text-[10px] font-bold text-indigo-600 flex items-center gap-1">
+                                🧠 Deep Intent (الفجوة النفسية):
+                            </p>
+                            {store.step2.merged.gapAnalysis.hiddenObjections.map((obj, i) => (
+                                <div key={i} className="flex flex-col gap-1 text-xs p-2 rounded bg-indigo-50 border border-indigo-200">
+                                    <span className="font-semibold text-indigo-900">{obj.fearOrObjection}</span>
+                                    <span className="text-muted-foreground">→ <span className="font-mono text-indigo-600">H2:</span> {obj.suggestedH2}</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Weapon 6: Counter-Narrative */}
+                    {store.step2?.merged?.gapAnalysis?.counterNarrative && (
+                        <div className="space-y-1.5 mt-2">
+                            <p className="text-[10px] font-bold text-red-600 flex items-center gap-1">
+                                ⚔️ Counter-Narrative (Weapon 6):
+                            </p>
+                            <div className="flex flex-col gap-1 text-xs p-2 rounded bg-red-50 border border-red-200">
+                                <span className="text-muted-foreground strike-through">Standard: {store.step2.merged.gapAnalysis.counterNarrative.standardAdvice}</span>
+                                <span className="font-semibold text-red-900">Your Take: {store.step2.merged.gapAnalysis.counterNarrative.contrarianTake}</span>
+                                <span className="text-muted-foreground mt-1">→ <span className="font-mono text-red-600">H2:</span> {store.step2.merged.gapAnalysis.counterNarrative.suggestedH2}</span>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Covered */}
                     {analysis.covered.length > 0 && (
-                        <div className="space-y-1">
+                        <div className="space-y-1 mt-2">
                             <p className="text-[10px] font-semibold text-green-600">Covered Topics ✓</p>
                             <div className="flex flex-wrap gap-1">
                                 {analysis.covered.map((c, i) => (

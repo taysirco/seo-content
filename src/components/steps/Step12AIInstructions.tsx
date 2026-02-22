@@ -15,6 +15,7 @@ import type { PipelineState } from '@/types/pipeline';
 const DEFAULTS: WritingConfig = {
   tone: 'professional',
   voice: 'third_person',
+  persona: 'default',
   audience: 'general',
   contentLength: 'long',
   languageStyle: 'msa',
@@ -24,6 +25,15 @@ const DEFAULTS: WritingConfig = {
 };
 
 function buildInstructionsString(config: WritingConfig): string {
+  const personaMap: Record<string, string> = {
+    default: 'Default Strategist',
+    doctor: 'Medical Doctor / Physician',
+    engineer: 'Senior Engineer / Architect',
+    marketer: 'Growth Hacker / CMO',
+    lawyer: 'Legal Consultant',
+    chef: 'Professional Chef / Culinary Expert',
+    reviewer: 'Tech Reviewer / Consumer Advocate',
+  };
   const toneMap: Record<string, string> = {
     professional: 'Professional', casual: 'Casual', academic: 'Academic',
     conversational: 'Conversational', authoritative: 'Authoritative',
@@ -44,6 +54,7 @@ function buildInstructionsString(config: WritingConfig): string {
   };
 
   const parts = [
+    `Persona: ${personaMap[config.persona || 'default']}`,
     `Tone: ${toneMap[config.tone]}`,
     `Voice: ${voiceMap[config.voice]}`,
     `Target Audience: ${audienceMap[config.audience]}`,
@@ -123,7 +134,24 @@ export function Step12AIInstructions() {
           Configure AI writing instructions.
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Persona */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1">👤 Persona <Badge variant="outline" className="text-[8px] bg-indigo-50 text-indigo-700">Weapon 2</Badge></Label>
+            <Select value={config.persona || 'default'} onValueChange={(v) => updateConfig({ persona: v as WritingConfig['persona'] })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">Default Strategist</SelectItem>
+                <SelectItem value="doctor">Medical Doctor 🩺</SelectItem>
+                <SelectItem value="engineer">Senior Engineer 🏗️</SelectItem>
+                <SelectItem value="marketer">Growth Hacker 📈</SelectItem>
+                <SelectItem value="lawyer">Legal Consultant ⚖️</SelectItem>
+                <SelectItem value="chef">Pro Chef 🍳</SelectItem>
+                <SelectItem value="reviewer">Tech Reviewer 📱</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Tone */}
           <div className="space-y-2">
             <Label>Tone</Label>

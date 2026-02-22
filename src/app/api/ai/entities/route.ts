@@ -16,50 +16,26 @@ const EMPTY_ANALYSIS: EntityAnalysisResult = {
   contentScore: 0, criticalGaps: ['Analysis failed'],
 };
 
-/** Analyze a batch of 1-3 competitors in ONE AI call */
-async function analyzeBatch(
-  items: { url: string; text: string; index: number }[],
-): Promise<EntityAnalysisResult[]> {
-  const count = items.length;
-  const batchPrompt = items.map((item, i) =>
-    `=== COMPETITOR ${i + 1} (${item.url}) ===\n${item.text.slice(0, 4000)}`
-  ).join('\n\n');
-
-  const systemExt = count === 1
-    ? ENTITY_ANALYSIS_SYSTEM
-    : ENTITY_ANALYSIS_SYSTEM + `\n\nYou are analyzing ${count} competitor texts. Return a JSON object: { "results": [analysis1, analysis2${count > 2 ? ', analysis3' : ''}] } where each analysis has: title, foundInContent, suggestedToAdd, contentScore, criticalGaps.`;
-
-  const userPrompt = count === 1
-    ? buildEntityAnalysisPrompt(items[0].text)
-    : `Analyze these ${count} competitors and return per-competitor entity analysis:\n\n${batchPrompt}\n\nReturn JSON: { "results": [{title, foundInContent:{people:[{name,count}],...}, suggestedToAdd:{...}, contentScore:N, criticalGaps:[...]}, ...] }`;
+async function analyzeSingleCompetitor(item: { url: string; text: string; index: number }): Promise<EntityAnalysisResult> {
+  const userPrompt = buildEntityAnalysisPrompt(item.text.slice(0, 4000));
 
   try {
     const result = await callGemini({
-      systemInstruction: systemExt,
+      systemInstruction: ENTITY_ANALYSIS_SYSTEM,
       userPrompt,
       temperature: 0.3,
-      maxOutputTokens: 8192,
+      maxOutputTokens: 2048,
     });
     const parsed = JSON.parse(result);
-
-    if (count === 1) {
-      return [validateEntityAnalysis(parsed)];
-    }
-
-    const rawArr = parsed.results || parsed.perCompetitor || (Array.isArray(parsed) ? parsed : [parsed]);
-    const validated = rawArr.map((r: unknown) => {
-      try { return validateEntityAnalysis(r as Record<string, unknown>); }
-      catch { return { ...EMPTY_ANALYSIS }; }
-    });
-    // Pad if AI returned fewer
-    while (validated.length < count) validated.push({ ...EMPTY_ANALYSIS, title: `Competitor ${validated.length + 1}` });
+    const validated = validateEntityAnalysis(parsed);
+    validated.title = validated.title || item.url.replace(/^https?:\/\//, '').split('/')[0] || `Competitor ${item.index + 1}`;
     return validated;
   } catch (err) {
-    console.warn(`[entities] Batch of ${count} failed:`, err);
-    return items.map(item => ({
+    console.warn(`[entities] Failed for competitor ${item.index + 1}:`, err);
+    return {
       ...EMPTY_ANALYSIS,
       title: item.url.replace(/^https?:\/\//, '').split('/')[0] || `Competitor ${item.index + 1}`,
-    }));
+    };
   }
 }
 
@@ -67,7 +43,7 @@ export async function POST(req: NextRequest) {
   const log = startRequestLog('/api/ai/entities');
   try {
     const body = await req.json();
-    const { mode, keyword } = body as { mode: 'competitors' | 'generate' | 'merge'; keyword: string };
+    const { mode, keyword } = body as { mode: 'competitors' | 'generate' | 'merge' | 'extract'; keyword: string };
 
     if (mode === 'generate') {
       const result = await callGemini({
@@ -104,17 +80,29 @@ export async function POST(req: NextRequest) {
     // PERF: Deduplicate boilerplate across competitors
     const cleanTexts = deduplicateCompetitorTexts(contents.map(c => c.text));
 
-    // Phase 1: Batch competitors in groups of 3 — fewer AI calls, faster
-    const BATCH_SIZE = 3;
+    // Phase 1: Process competitors concurrently in batches of 4
+    // Using individual AI calls per competitor guarantees no dropped data and is faster
+    const BATCH_SIZE = 4;
     const allItems = contents.map((c, i) => ({ url: c.url, text: cleanTexts[i] || c.text, index: i }));
     const perCompetitor: EntityAnalysisResult[] = [];
+
     for (let i = 0; i < allItems.length; i += BATCH_SIZE) {
       const batch = allItems.slice(i, i + BATCH_SIZE);
-      const results = await analyzeBatch(batch);
+      const results = await Promise.all(batch.map(item => analyzeSingleCompetitor(item)));
       perCompetitor.push(...results);
+
+      // Slight delay between chunks if we have more to process
+      if (i + BATCH_SIZE < allItems.length) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
     }
 
     // Phase 2: Merge successful per-competitor results in ONE call
+    if (mode === 'extract') {
+      log.success(200, { mode, competitors: contents.length });
+      return NextResponse.json({ perCompetitor, merged: null });
+    }
+
     const entitySources = perCompetitor
       .filter((r: EntityAnalysisResult) => r.contentScore > 0 || Object.values(r.foundInContent).some((arr: unknown[]) => arr.length > 0))
       .map((r: EntityAnalysisResult) => JSON.stringify(r.foundInContent));

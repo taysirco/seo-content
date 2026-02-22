@@ -11,7 +11,7 @@ export function DataReadyPanel({ store }: DataReadyPanelProps) {
     const dataSources = [
         { step: 2, label: 'المخطط', labelEn: 'Outline', data: store.step2, detail: store.step2 ? `${store.step2.merged.headings.length} عنوان` : null },
         { step: 3, label: 'المحتوى', labelEn: 'Content', data: store.step3, detail: store.step3 ? `${store.step3.contents.filter((c: { wordCount: number }) => c.wordCount > 0).length} صفحة` : null },
-        { step: 4, label: 'كيانات المنافسين', labelEn: 'Entities', data: store.step4, detail: store.step4 ? `${store.step4.merged.totalUnique} كيان` : null },
+        { step: 4, label: 'كيانات المنافسين', labelEn: 'Entities', data: store.step4, detail: store.step4 ? `${store.step4.merged?.totalUnique ?? store.step4.perCompetitor?.length ?? 0} كيان` : null },
         { step: 5, label: 'كيانات AI', labelEn: 'AI Entities', data: store.step5, detail: store.step5 ? `${store.step5.aiEntities.entities.length} كيان` : null },
         { step: 6, label: 'N-Grams', labelEn: 'N-Grams', data: store.step6, detail: store.step6 ? `${(store.step6.picked.length - (store.step6.excludedPicked?.length || 0)) + (store.step6.unique.length - (store.step6.excludedUnique?.length || 0)) + (store.step6.generated ? (Object.values(store.step6.generated) as unknown[][]).reduce((s: number, a: unknown[]) => s + (Array.isArray(a) ? a.length : 0), 0) : 0)} عبارة` : null },
         { step: 7, label: 'NLP', labelEn: 'Keywords', data: store.step7, detail: store.step7 ? `نقاط: ${store.step7.combined.contentScore}` : null },
@@ -36,8 +36,8 @@ export function DataReadyPanel({ store }: DataReadyPanelProps) {
                     <div
                         key={src.step}
                         className={`flex items-center gap-2 p-2 rounded-md text-xs transition-colors ${src.data
-                                ? 'bg-green-500/10 text-green-700 dark:text-green-400'
-                                : 'bg-muted/30 text-muted-foreground'
+                            ? 'bg-green-500/10 text-green-700 dark:text-green-400'
+                            : 'bg-muted/30 text-muted-foreground'
                             }`}
                     >
                         <div className={`w-2 h-2 rounded-full shrink-0 ${src.data ? 'bg-green-500' : 'bg-muted-foreground/30'}`} />

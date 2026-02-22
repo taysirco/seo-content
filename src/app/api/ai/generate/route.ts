@@ -7,6 +7,13 @@ import {
   buildConclusionPrompt, parseSectionTasks,
 } from '@/lib/prompts/section-prompt-builder';
 import type { PipelineState } from '@/types/pipeline';
+import { getAdminDb } from '@/lib/firebase-admin';
+
+// Helper to extract a clean base URL from a string (for Semantic Silo)
+function extractDomain(url: string | undefined): string | null {
+  if (!url) return null;
+  try { return new URL(url.startsWith('http') ? url : `https://${url}`).hostname; } catch { return null; }
+}
 
 function buildState(body: Record<string, unknown>): PipelineState {
   return {
@@ -76,6 +83,35 @@ export async function POST(req: NextRequest) {
 
     const encoder = new TextEncoder();
 
+    // Weapon 4: Semantic Silo - Fetch related projects on the same domain
+    if (state.clientMeta?.domain) {
+      try {
+        const db = getAdminDb();
+        const domain = extractDomain(state.clientMeta.domain);
+        if (domain) {
+          const snapshot = await db.collection('projects')
+            .where('domain', '==', domain)
+            .where('status', 'in', ['published', 'approved']) // Only link to safe pages
+            .limit(20)
+            .get();
+
+          const links: { keyword: string; url: string; projectId: string }[] = [];
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            if (doc.id !== state.projectId && data.keyword && data.url) {
+              links.push({ keyword: data.keyword, url: data.url, projectId: doc.id });
+            }
+          });
+
+          if (links.length > 0) {
+            state.internalLinks = links;
+          }
+        }
+      } catch (err) {
+        console.warn('Semantic Silo fetch failed:', err);
+      }
+    }
+
     // ─── MODE 1: Single section regeneration (with full SEO context) ───
     if (sectionOnly) {
       const sysPrompt = getSystemInstruction(state);
@@ -95,7 +131,7 @@ Do NOT include any other sections.`;
         userPrompt += `\n\nAUDIT FIX REQUIRED: The SEO Auditor flagged this section with the following issue: "${auditFix}". You MUST fix this specific problem in your rewrite.`;
       }
 
-      const stream = streamGemini({ systemInstruction: sysPrompt, userPrompt, temperature: 0.7, maxOutputTokens: 8192, useGrounding });
+      const stream = streamGemini({ systemInstruction: sysPrompt, userPrompt, temperature: 0.4, maxOutputTokens: 8192, useGrounding });
       const readable = new ReadableStream({
         async start(controller) {
           try { for await (const chunk of stream) { controller.enqueue(encoder.encode(chunk)); } controller.close(); }
@@ -118,7 +154,7 @@ Do NOT include any other sections.`;
             emitProgress(controller, encoder, 1, totalPhases, 'Introduction / المقدمة');
             const introPrompt = buildIntroPrompt(state);
             // Phase 4A: Auto-enable grounding for intro — it benefits most from fresh stats/data
-            const introHtml = await streamAndCollect(streamGemini({ systemInstruction: sysPrompt, userPrompt: introPrompt, temperature: 0.7, maxOutputTokens: 4096, useGrounding: true }), controller, encoder);
+            const introHtml = await streamAndCollect(streamGemini({ systemInstruction: sysPrompt, userPrompt: introPrompt, temperature: 0.4, maxOutputTokens: 4096, useGrounding: true }), controller, encoder);
             let previousTail = getTail(introHtml);
 
             // Phase 2: Each H2 section — stream tokens directly (with error recovery)
@@ -126,7 +162,7 @@ Do NOT include any other sections.`;
               emitProgress(controller, encoder, section.sectionIndex + 2, totalPhases, section.heading);
               try {
                 const sectionPrompt = buildSectionPrompt(state, section, previousTail);
-                const sectionHtml = await streamAndCollect(streamGemini({ systemInstruction: sysPrompt, userPrompt: sectionPrompt, temperature: 0.7, maxOutputTokens: 6144, useGrounding }), controller, encoder);
+                const sectionHtml = await streamAndCollect(streamGemini({ systemInstruction: sysPrompt, userPrompt: sectionPrompt, temperature: 0.4, maxOutputTokens: 8192, useGrounding }), controller, encoder);
                 previousTail = getTail(sectionHtml);
               } catch (sectionErr) {
                 // Emit error marker — frontend can detect and offer re-generation
@@ -139,7 +175,7 @@ Do NOT include any other sections.`;
             emitProgress(controller, encoder, totalPhases, totalPhases, 'Conclusion & FAQ / الخاتمة');
             try {
               const conclusionPrompt = buildConclusionPrompt(state, previousTail);
-              await streamAndCollect(streamGemini({ systemInstruction: sysPrompt, userPrompt: conclusionPrompt, temperature: 0.7, maxOutputTokens: 6144, useGrounding }), controller, encoder);
+              await streamAndCollect(streamGemini({ systemInstruction: sysPrompt, userPrompt: conclusionPrompt, temperature: 0.4, maxOutputTokens: 6144, useGrounding }), controller, encoder);
             } catch (concErr) {
               const errMsg = concErr instanceof Error ? concErr.message : 'Unexpected error';
               controller.enqueue(encoder.encode(`\n<!-- SECTION_ERROR:Conclusion -->\n<div class="section-error" style="border:2px solid #ef4444;padding:16px;border-radius:8px;margin:16px 0;background:#fef2f2"><h2>Conclusion</h2><p style="color:#dc2626">⚠️ Conclusion generation failed: ${errMsg}</p></div>\n`));
@@ -157,7 +193,7 @@ Do NOT include any other sections.`;
 
     // ─── MODE 3: Legacy single-shot generation (fallback) ───
     const { system, user } = buildMegaPrompt(state);
-    const stream = streamGemini({ systemInstruction: system, userPrompt: user, temperature: 0.7, maxOutputTokens: 32768, useGrounding });
+    const stream = streamGemini({ systemInstruction: system, userPrompt: user, temperature: 0.4, maxOutputTokens: 32768, useGrounding });
 
     const readable = new ReadableStream({
       async start(controller) {

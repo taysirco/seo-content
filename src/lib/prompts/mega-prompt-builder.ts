@@ -62,19 +62,23 @@ export function buildMegaPrompt(state: PipelineState): { system: string; user: s
 
   const system = `You are an expert SEO content writer specializing in ${langName} content. Write a comprehensive, SEO-optimized article following the exact outline and incorporating all the provided SEO data.
 
+GOOGLE HELPFUL CONTENT SIGNALS (HCU) & HUMAN-FIRST RULES:
+1. Write like a passionate, opinionated human expert. Never use robotic transitions ("In conclusion", "It is important to note", "In the ever-evolving landscape").
+2. DEMONSTRATE EXPERTISE: Back claims with specific data or examples. Provide UNIQUE value not found elsewhere.
+3. BAN AI CLICHÉS: Break predictable patterns. Vary sentence length dramatically. Use active voice.
+
 CRITICAL RULES:
-1. ${langDirective}
-2. ${toneDirective}
-3. ${voiceDirective}
-4. ${audienceDirective}
-5. ${formattingDirective}${ctaDirective ? `\n6. ${ctaDirective}` : ''}
-${ctaDirective ? '7' : '6'}. Follow the provided outline EXACTLY — do not skip or reorder sections.
-${ctaDirective ? '8' : '7'}. Naturally incorporate ALL provided entities, keywords, and phrases throughout the article.
-${ctaDirective ? '9' : '8'}. Use proper HTML heading tags (h1, h2, h3) matching the outline hierarchy.
-${ctaDirective ? '10' : '9'}. Write engaging, authoritative content that demonstrates E-E-A-T signals.
-${ctaDirective ? '11' : '10'}. Each section must be substantive — no thin or placeholder content.
-${ctaDirective ? '12' : '11'}. Use transition sentences between sections for natural flow.
-${ctaDirective ? '13' : '12'}. SEMANTIC PRECISION: Answer questions immediately. Be certain — no "might", "could", "maybe". Use numbers, not vague quantities. Bold the answer, not the keyword.`;
+4. ${langDirective}
+5. ${toneDirective}
+6. ${voiceDirective}
+7. ${audienceDirective}
+8. ${formattingDirective}${ctaDirective ? `\n9. ${ctaDirective}` : ''}
+${ctaDirective ? '10' : '9'}. Follow the provided outline EXACTLY — do not skip or reorder sections.
+${ctaDirective ? '11' : '10'}. Naturally incorporate ALL provided entities, keywords, and phrases throughout the article.
+${ctaDirective ? '12' : '11'}. Use proper HTML heading tags (h1, h2, h3) matching the outline hierarchy.
+${ctaDirective ? '13' : '12'}. Write engaging, authoritative content that demonstrates E-E-A-T signals.
+${ctaDirective ? '14' : '13'}. Each section must be substantive — no thin or placeholder content.
+${ctaDirective ? '15' : '14'}. SEMANTIC PRECISION: Answer questions immediately. Be certain — no "might", "could", "maybe". Bold the answer, not the keyword.`;
 
   const sections: string[] = [];
 
@@ -84,6 +88,30 @@ ${ctaDirective ? '13' : '12'}. SEMANTIC PRECISION: Answer questions immediately.
       .map(h => `${'#'.repeat(h.level)} ${h.text}`)
       .join('\n');
     sections.push(`=== ARTICLE OUTLINE ===\nFollow this exact outline structure:\n${outlineText}`);
+  }
+
+  // SECTION 1B: GAP ANALYSIS (COMPETITOR WEAKNESSES)
+  const gapAnalysis = state.step2?.merged?.gapAnalysis;
+  if (gapAnalysis) {
+    const gapParts: string[] = [];
+    if (gapAnalysis.blindSpots?.length) {
+      gapParts.push(`COMPETITOR BLIND SPOTS TO EXPLOIT: ${gapAnalysis.blindSpots.map(b => b.heading).join(', ')}`);
+    }
+    if (gapAnalysis.hiddenObjections?.length) {
+      gapParts.push(`HIDDEN OBJECTIONS TO RESOLVE: ${gapAnalysis.hiddenObjections.map(o => o.fearOrObjection).join(', ')}`);
+    }
+    if (gapAnalysis.missingQuestions?.length) {
+      gapParts.push(`MISSING QUESTIONS TO ANSWER: ${gapAnalysis.missingQuestions.join(', ')}`);
+    }
+    if (gapAnalysis.uniqueAngles?.length) {
+      gapParts.push(`UNIQUE ANGLES TO EXPLORE: ${gapAnalysis.uniqueAngles.join(', ')}`);
+    }
+    if (gapAnalysis.counterNarrative) {
+      gapParts.push(`WEAPON 6 (COUNTER-NARRATIVE):\nChallenge the standard advice: "${gapAnalysis.counterNarrative.standardAdvice}"\nPresent this superior contrarian take: "${gapAnalysis.counterNarrative.contrarianTake}"`);
+    }
+    if (gapParts.length > 0) {
+      sections.push(`=== COMPETITOR GAP ANALYSIS (MANDATORY TO COVER) ===\nYou MUST address these topics to create a superior article and dominate competitors:\n${gapParts.join('\n\n')}`);
+    }
   }
 
   // SECTION 2: COMPETITOR TONE REFERENCE
@@ -310,10 +338,10 @@ STYLE RULES:
 
   // SECTION 11: OUTPUT FORMAT
   const lengthMap: Record<string, string> = {
-    short: 'Minimum 800 words, target 1000-1200 words.',
-    medium: 'Minimum 1500 words, target 2000-2500 words.',
-    long: 'Minimum 3000 words, target 4000-5000 words.',
-    comprehensive: 'Minimum 5000 words. Cover every subtopic exhaustively.',
+    short: 'Strict target: 600-800 words.',
+    medium: 'Strict target: 1000-1200 words.',
+    long: 'Strict target: 1500-2000 words.',
+    comprehensive: 'Strict target: 2000-3000 words. Cover every subtopic exhaustively without fluff or repetition.',
   };
   const lengthDirective = lengthMap[state.step12?.config?.contentLength || 'long'] || lengthMap.long;
 

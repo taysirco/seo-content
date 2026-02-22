@@ -103,15 +103,17 @@ ${articleHtml.slice(0, 25000)}
 
 CHECKLIST:
 1. FORBIDDEN CLICHÉS — scan for these EXACT phrases: [${forbiddenPhrases.join(', ')}]
-2. KEYWORD DENSITY — primary keyword "${keyword}" must appear at 0.5-2.5% density.
-3. OUTLINE COVERAGE — ALL these H2 headings must exist: [${outlineHeadings.join(' | ')}]
-4. ENTITY COVERAGE — these entities should appear: [${entities.slice(0, 30).join(', ')}]
-5. SECTION DEPTH — every H2 section must have ≥150 words.
-6. COHERENCE — transitions between sections should be natural, no abrupt topic jumps.
-7. BURSTINESS — sentences should vary in length (mix of short 5-word and long 25-word sentences).
-8. ANSWER FIRST — CRITICAL: The first sentence after every H2 must answer the heading's implied question directly (Start with Subject + Verb).
-9. AUTHORITY & DATA — CRITICAL: The article must contain at least 3 distinct statistical data points (numbers, percentages, dates) or citations.
-10. SEMANTIC HARMONY — Verify that the start of each section logically follows the end of the previous one.
+2. KEYWORD PROMINENCE — CRITICAL: primary keyword "${keyword}" MUST appear within the first 100 words of the text.
+3. KEYWORD DENSITY — primary keyword "${keyword}" must appear at 0.5-2.5% density.
+4. OUTLINE COVERAGE — ALL these H2 headings must exist: [${outlineHeadings.join(' | ')}]
+5. ENTITY COVERAGE — these entities should appear: [${entities.slice(0, 30).join(', ')}]
+6. SECTION DEPTH & UX — every H2 section must have ≥150 words. A section exceeding 300 words without breaking down (H3, Lists, Tables) is a "Wall of Text" penalty.
+7. USER INTENT ALIGNMENT — Assess if the overall tone actually solves the implicit problem of "${keyword}" or if it just fluffs around it.
+8. COHERENCE — transitions between sections should be natural, no abrupt topic jumps.
+9. BURSTINESS — sentences should vary in length (mix of short 5-word and long 25-word sentences).
+10. ANSWER FIRST — CRITICAL: The first sentence after every H2 must answer the heading's implied question directly (Start with Subject + Verb).
+11. AUTHORITY & DATA — CRITICAL: The article must contain at least 3 distinct statistical data points (numbers, percentages, dates) or citations.
+12. SEMANTIC HARMONY — Verify that the start of each section logically follows the end of the previous one.
 ${conditionalChecks.join('\n')}
 
 Return your JSON verdict.`;

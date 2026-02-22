@@ -13,26 +13,40 @@ interface EEATScoreCardProps {
 export function EEATScoreCard({ content, keyword }: EEATScoreCardProps) {
     const score = useMemo(() => {
         if (!content) return null;
-        const plain = (() => { const d = document.createElement('div'); d.innerHTML = content; return d.textContent || ''; })();
+
+        const d = document.createElement('div');
+        d.innerHTML = content;
+        const plain = d.textContent || '';
+
+        // Extract Links
+        const links = Array.from(d.querySelectorAll('a')).map(a => a.href);
+        const currentDomain = window.location.hostname; // Approximation, though usually we might want store.clientMeta.domain
+        const externalLinks = links.filter(l => l.startsWith('http') && !l.includes(currentDomain) && !l.includes('localhost'));
+        const internalLinks = links.filter(l => l.startsWith('/') || l.includes(currentDomain));
+
         const checks: { label: string; found: boolean; weight: number; tip: string }[] = [];
 
-        // Experience signals
-        checks.push({ label: 'Personal experience / practical examples', found: /تجربت|تجربة|جرّب|من واقع|عملياً|في الممارسة|experience|practical|real-world/i.test(plain), weight: 15, tip: 'Add real-world examples from actual experience' });
-        checks.push({ label: 'Data & statistics', found: /\d+%|\d+٪|دراسة|بحث|إحصائ|وفقاً|حسب تقرير|study|research|according to|report/i.test(plain), weight: 15, tip: 'Add statistics from authoritative sources' });
+        // Experience signals - Deep Arabic Matching
+        const experienceRegex = /(تجربت(?:ي|نا)|في (ممارستنا|تجربتنا)|قمت بـ|قمنا بـ|لاحظنا|اكتشفنا|مما رأيناه|من واقع التعامل|عملياً سنجد|experience|practical|real-world)/i;
+        checks.push({ label: 'خبرة شخصية / أمثلة واقعية (Personal Experience)', found: experienceRegex.test(plain), weight: 15, tip: 'أضف أمثلة واقعية وعبارات مثل "من تجربتنا" لتعزيز الـ E-E-A-T' });
+
+        const dataRegex = /(\d+%|\d+٪|دراسة (حديثة|جديدة)|أبحاث|إحصائيات|وفقاً لـ|حسب تقرير|أظهرت البيانات|study|research|according to|report)/i;
+        checks.push({ label: 'إحصائيات وبيانات (Data & Statistics)', found: dataRegex.test(plain), weight: 15, tip: 'ادعم المحتوى بأرقام وإحصائيات موثوقة' });
 
         // Expertise signals
-        checks.push({ label: 'Sources / references', found: /<a[^>]*href/i.test(content) || /المصدر|المرجع|وفقاً لـ|حسب|source|reference|according/i.test(plain), weight: 15, tip: 'Add links to authoritative external sources' });
-        checks.push({ label: 'Specialized terminology', found: plain.split(/\s+/).filter(w => w.length > 6).length > 20, weight: 10, tip: 'Use domain-specific terminology' });
-        checks.push({ label: 'Expert quotes', found: /قال|يقول|أشار|وفق|صرّح|أوضح الدكتور|البروفيسور|said|stated|according to Dr|Professor/i.test(plain), weight: 10, tip: 'Add expert quotes from the field' });
+        checks.push({ label: 'روابط خارجية لمصادر (External Authority Links)', found: externalLinks.length > 0 || /المصدر:|المرجع:|وفقاً لـ(وزارة|هيئة|منظمة)/i.test(plain), weight: 15, tip: 'أضف روابط صالحة لمصادر خارجية عالية الموثوقية' });
+        checks.push({ label: 'روابط داخلية (Internal Linking)', found: internalLinks.length > 0, weight: 10, tip: 'قم بربط هذا المقال بمقالات أخرى في موقعك لتقوية السيلو (Silo)' });
 
-        // Authoritativeness
-        checks.push({ label: 'Structured H2/H3 hierarchy', found: (content.match(/<h2/gi) || []).length >= 3, weight: 10, tip: 'Organize content with clear headings' });
-        checks.push({ label: 'FAQ section', found: /أسئلة شائعة|الأسئلة المتكررة|FAQ|frequently asked|؟/.test(plain) && (content.match(/<h3/gi) || []).length >= 2, weight: 10, tip: 'Add an FAQ section' });
+        const expertRegex = /(قال الخبير|يقول المتخصص|صرح المهندس|أوضح الدكتور|أشار البروفيسور|بحسب خبراء|رأي خبير|said|stated|according to Dr|Professor)/i;
+        checks.push({ label: 'اقتباسات خبراء (Expert Quotes)', found: expertRegex.test(plain), weight: 10, tip: 'استعن باقتباسات لخبراء في مجالك لإثبات السلطة (Authority)' });
+
+        // Authoritativeness / UX
+        checks.push({ label: 'هيكلة عناوين سليمة (H2/H3 Hierarchy)', found: (content.match(/<h2/gi) || []).length >= 3, weight: 10, tip: 'قسّم المحتوى لترويسات H2 واضحة (3 على الأقل)' });
+        checks.push({ label: 'قسم الأسئلة الشائعة (FAQ)', found: /(أسئلة شائعة|الأسئلة المتكررة|FAQ|frequently asked|؟)/.test(plain) && (content.match(/<h3/gi) || []).length >= 2, weight: 10, tip: 'أضف قسم أسئلة شائعة باستخدام H3' });
 
         // Trust
-        checks.push({ label: 'Schema JSON-LD', found: /application\/ld\+json/i.test(content), weight: 5, tip: 'Add Schema markup' });
-        checks.push({ label: 'Publish/update date', found: /تاريخ|آخر تحديث|نُشر في|datePublished|published|updated/i.test(plain + content), weight: 5, tip: 'Add publish and update dates' });
-        checks.push({ label: 'Sufficient length (>1500 words)', found: plain.split(/\s+/).filter(Boolean).length >= 1500, weight: 5, tip: 'Write longer, more comprehensive content' });
+        checks.push({ label: 'تغطية واسعة (>1000 كلمة)', found: plain.split(/\s+/).filter(Boolean).length >= 1000, weight: 10, tip: 'اكتب محتوى شاملاً يغطي الموضوع من كافة الجوانب (Thin Content يعاقب من جوجل)' });
+        checks.push({ label: 'جداول أو قوائم لتسهيل القراءة', found: /<table|<ul|<ol/i.test(content), weight: 5, tip: 'استخدم القوائم النقطية والجداول لزيادة فرص المقتطف المميز (Featured Snippet)' });
 
         const totalWeight = checks.reduce((sum, c) => sum + c.weight, 0);
         const earnedWeight = checks.filter(c => c.found).reduce((sum, c) => sum + c.weight, 0);

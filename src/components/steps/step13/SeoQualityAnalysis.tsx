@@ -67,9 +67,7 @@ export function SeoQualityAnalysis({ content, keyword, store }: SeoQualityAnalys
         let entitiesFound = 0;
         let entitiesTotal = 0;
         if (store.step4?.merged) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             Object.values(store.step4.merged.entities).forEach(items => {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (items as { name: string }[]).forEach(e => {
                     entitiesTotal++;
                     if (plainText.includes(e.name)) entitiesFound++;
@@ -195,6 +193,16 @@ export function SeoQualityAnalysis({ content, keyword, store }: SeoQualityAnalys
             }
         }
 
+        // Featured Snippet Probability Model
+        let fsScore = 0;
+        if (kwDensity >= 0.5 && kwDensity <= 3.0) fsScore += 20;
+        if (h2s >= 3) fsScore += 20;
+        if (quickAnswerCount > 0) fsScore += 25; // High weight for AEO optimized boxes
+        const ulCount = (content.match(/<ul[\s>]/gi) || []).length;
+        if (compTableCount > 0 || ulCount > 0) fsScore += 20; // Structural data
+        if (wordCount >= 800) fsScore += 15;
+        const featuredSnippetProb = Math.min(100, fsScore);
+
         return {
             kwCount, kwDensity, h1s, h2s, h3s,
             meetsTarget, targetPercent, target,
@@ -214,6 +222,8 @@ export function SeoQualityAnalysis({ content, keyword, store }: SeoQualityAnalys
             kwDistribution,
             // SM-4
             readingScore, readingLabel, freshnessDays, freshnessLabel,
+            // SGE / Snippets
+            featuredSnippetProb
         };
     }, [content, wordCount, keyword, store.step2?.merged, store.step4?.merged, store.step6, store.step8, store.step9, store.step12?.config?.contentLength, store.step13?.generatedAt, articleSections]);
 
@@ -378,7 +388,7 @@ export function SeoQualityAnalysis({ content, keyword, store }: SeoQualityAnalys
             )}
 
             {/* D11-1 + SM-4: Content Stats Panel */}
-            <div className="grid grid-cols-3 md:grid-cols-7 gap-2 pt-2 border-t">
+            <div className="grid grid-cols-4 md:grid-cols-8 gap-2 pt-2 border-t">
                 <div className="rounded-md border p-2.5 text-center">
                     <div className="text-lg font-bold text-primary">{seoAnalysis.readingTimeMin}m</div>
                     <div className="text-[9px] text-muted-foreground">Reading Time</div>
@@ -409,6 +419,13 @@ export function SeoQualityAnalysis({ content, keyword, store }: SeoQualityAnalys
                         {seoAnalysis.readingScore}
                     </div>
                     <div className="text-[9px] text-muted-foreground">{seoAnalysis.readingLabel}</div>
+                </div>
+                {/* Featured Snippet Prob */}
+                <div className="rounded-md border border-indigo-500/30 bg-indigo-500/5 p-2.5 text-center">
+                    <div className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
+                        {seoAnalysis.featuredSnippetProb}%
+                    </div>
+                    <div className="text-[9px] text-muted-foreground font-semibold">SGE/Snippet Prob</div>
                 </div>
                 {/* SM-4: Content Freshness */}
                 <div className="rounded-md border p-2.5 text-center">

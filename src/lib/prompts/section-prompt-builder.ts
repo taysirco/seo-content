@@ -46,6 +46,19 @@ export function getSystemInstruction(state: PipelineState): string {
     students: 'Target students — be educational and step-by-step.',
   };
   const audienceDirective = audienceMap[config?.audience || 'general'] || '';
+
+  // Weapon 2: Persona Engine
+  const personaMap: Record<string, string> = {
+    doctor: 'Act as a Board-Certified Medical Doctor. Use clinical precision, cite medical consensus, and speak with compassionate authority.',
+    engineer: 'Act as a Senior Engineer. Focus on structural integrity, technical systems, efficiency, and root-cause analysis.',
+    marketer: 'Act as a Growth Marketer. Focus on conversions, ROI, psychology, and actionable business metrics.',
+    lawyer: 'Act as a Legal Consultant. Use precise terminology, emphasize compliance/risk, and maintain airtight logic (without giving formal legal advice).',
+    chef: 'Act as a Professional Chef. Emphasize technique, flavor profiles, precise measurements, and culinary science.',
+    reviewer: 'Act as an Unbiased Tech Reviewer. Be highly critical, focus on daily usability flaws, and compare aggressively against alternatives.',
+    default: 'Act as an elite SEO content strategist.'
+  };
+  const personaDirective = personaMap[config?.persona || 'default'] || personaMap.default;
+
   const ctaMap: Record<string, string> = {
     soft: 'End sections with soft, suggestive calls-to-action.',
     direct: 'Include direct CTAs.',
@@ -61,7 +74,7 @@ export function getSystemInstruction(state: PipelineState): string {
 
   const experience = config?.firstHandExperience?.trim();
   const experienceRule = experience
-    ? `\n8. FIRST-HAND EXPERIENCE: The author provided this real experience: "${experience}". Weave it naturally as a mini case study or first-person anecdote in the MOST RELEVANT section. This is critical for E-E-A-T.`
+    ? `\n8. FIRST-HAND EXPERIENCE: The author provided this real experience: "${experience}". Weave it naturally as a mini case study or first-person anecdote in the MOST RELEVANT section. It MUST include at least one highly specific, verifiable detail (e.g., a specific metric, unique physical observation, or precise circumstance). This is critical for E-E-A-T.`
     : '';
 
   const toneRef = state.step3?.contents?.[0]?.text?.slice(0, 800);
@@ -80,26 +93,44 @@ export function getSystemInstruction(state: PipelineState): string {
   return `You are an elite ${langName} SEO content strategist who writes content that ranks #1 on Google. You write ONE section at a time for a larger article.
 
 CORE RULES:
-1. ${langDirective}
-2. Tone: ${toneMap[config?.tone || 'professional']}.  Voice: ${voiceMap[config?.voice || 'third_person']}.${audienceDirective ? ` ${audienceDirective}` : ''}
-3. Output ONLY the HTML for the requested section — start with the <h2> tag, include all content, end before the next <h2>.
-4. Use <p>, <ul>, <ol>, <strong>, <blockquote>, <table> tags. NO <html>/<body>/<head>.
-5. Each section must be substantive (300-600 words minimum).
-6. FORBIDDEN phrases (NEVER use): ${forbiddenCsv}.
+1. ${personaDirective}
+2. Tone: ${toneMap[config?.tone || 'professional']}. Voice: ${voiceMap[config?.voice || 'third_person']}.${audienceDirective ? ` ${audienceDirective}` : ''}
+3. ${langDirective}
+4. Output ONLY the HTML for the requested section — start with the <h2> tag, include all content, end before the next <h2>.
+5. Use <p>, <ul>, <ol>, <strong>, <blockquote>, <table> tags. NO <html>/<body>/<head>.
+6. You will be given a STRICT word count target for each section. You MUST hit that target (±10%). Too short = REJECTED. Too long = REJECTED.
+7. FORBIDDEN phrases (NEVER use): ${forbiddenCsv}.
 
-GOOGLE HELPFUL CONTENT SIGNALS (critical for ranking):
-7. DEMONSTRATE EXPERTISE: Include specific data, statistics, percentages, or year references. Never make vague claims — always back with evidence or concrete examples.
-8. FIRST-HAND KNOWLEDGE: Write as if you have direct experience.${isArabic ? ' Use phrases like "من واقع التجربة", "عند التطبيق الفعلي", "لاحظنا أن".' : ' Use phrases like "in my experience", "when we tested this", "what we found is".'} Avoid generic textbook-style writing.
-9. DEPTH OVER BREADTH: Each section must add UNIQUE value not found in competing articles. Include insider tips, common mistakes, or counter-intuitive insights.
-10. ANSWER SEARCH INTENT: Every paragraph must directly serve the reader's goal. Remove fluff.
+GOOGLE HELPFUL CONTENT SIGNALS (HCU) & HUMAN-FIRST RULES:
+8. DEMONSTRATE EXPERTISE: Include specific data, statistics, percentages, or year references. Never make vague claims — always back with evidence or concrete examples.
+9. FIRST-HAND KNOWLEDGE: Write like a passionate, opinionated human expert.${isArabic ? ' Use phrases like "من واقع التجربة", "عند التطبيق الفعلي", "التجربة أثبتت أن".' : ' Use phrases like "in my experience", "having tested this", "here is what actually works".'} Avoid generic textbook-style writing.
+10. DEPTH OVER BREADTH (INFORMATION GAIN): Add UNIQUE value not found in competing articles. Introduce a net-new concept, statistic, or angle.
+11. ANSWER SEARCH INTENT: Every paragraph must serve the reader's goal. Remove fluff.
+12. BAN ROBOTIC TRANSITIONS: NEVER use cliché AI phrases like "In conclusion", "Furthermore", "It is important to note", "Let's dive in", "In the ever-evolving landscape". Start paragraphs directly with the main point.
 
 ANTI-AI DETECTION & NATURAL WRITING:
-11. Vary sentence length dramatically: mix 4-word punchy sentences with 30-word detailed ones.
-12. Use SPECIFIC ${langName} expressions and idioms naturally. Include cultural context where relevant.
-13. Never use parallel structure in consecutive paragraphs. Each paragraph must have a unique opening pattern.
-14. Include at least one unexpected insight or contrarian view per section.
-15. Add micro-data: specific numbers, tool names, brand mentions, expert quotes.
-16. SEMANTIC PRECISION: Answer questions immediately (don't delay with context). Be certain — no "might", "could", "maybe". Use numbers, not vague quantities. Bold the answer, not the keyword. Match heading structure in the first sentence.${ctaDirective ? `\n17_cta. ${ctaDirective}` : ''}${formattingDirective ? `\n17_fmt. ${formattingDirective}` : ''}${experienceRule}${toneBlock}${scoreBlock}`;
+13. Vary sentence length dramatically: mix 4-word punchy sentences with 30-word detailed ones.
+14. Use SPECIFIC ${langName} expressions and idioms naturally. Include cultural context where relevant.
+15. Never use parallel structure in consecutive paragraphs. Each paragraph must have a unique opening pattern.
+16. Add micro-data: specific numbers, tool names, brand mentions, expert quotes.
+17. SEMANTIC PRECISION: Answer questions immediately. Be certain — no "might", "could", "maybe". Bold the answer, not the keyword. Match heading structure in the first sentence.${ctaDirective ? `\n18_cta. ${ctaDirective}` : ''}${formattingDirective ? `\n18_fmt. ${formattingDirective}` : ''}${experienceRule}${toneBlock}${scoreBlock}
+${state.internalLinks?.length ? `\n\nSEMANTIC SILO (INTERNAL LINKING):
+19. You have access to the following related articles on our domain:
+${state.internalLinks.map(l => `- Keyword: "${l.keyword}" | URL: ${l.url}`).join('\n')}
+If ANY of these topics naturally fit into the section you are writing, you MUST create an HTML <a> link to them. CRITICAL: Use natural, phrase-based anchor text (e.g., 'recent studies on [topic]' or 'calculating the [topic]'). NEVER use exact-match keywords alone or generic texts like 'click here'. Look for natural contextual integration.` : ''}
+
+CRITICAL SEO & SEMANTIC RULES YOU MUST FOLLOW:
+${state.step11?.rules?.filter(r => r.enabled).map((r, i) => `${i + 1}. [${r.category?.toUpperCase() || 'SEO'}]: ${r.name}: ${r.fullPrompt}`).join('\n') || 'Write naturally and concisely.'}
+
+═══════════════════════════════════════════════════════
+ZERO-TOLERANCE COMPLIANCE ENFORCEMENT (READ CAREFULLY):
+═══════════════════════════════════════════════════════
+- If a word count target is given, you MUST write EXACTLY that many words (±10%). Count them. If you produce less, EXPAND with more depth, examples, and data. If you produce more, CUT fluff.
+- Every SEO rule listed above is MANDATORY, not a suggestion. Failure to comply = article rejection.
+- Every entity, N-gram, keyword, and skip-gram assigned to a section MUST appear in the output text. If you skip even ONE, the article fails quality check.
+- Do NOT pad content with filler phrases. Every sentence must provide VALUE. But you MUST hit the word count.
+- The outline structure is NON-NEGOTIABLE. Write ALL subsections listed. Do not skip, merge, or reorder them.
+- BEFORE finishing each section, mentally verify: (1) word count target met, (2) all assigned keywords used, (3) all assigned entities mentioned, (4) no forbidden phrases used.`;
 }
 
 export function buildIntroPrompt(state: PipelineState): string {
@@ -228,16 +259,8 @@ export function buildSectionPrompt(
   const paaQuestions = state.step1?.serpFeatures?.peopleAlsoAsk?.map(p => p.question) || [];
   const allQuestionPhrases = [...new Set([...nlpQuestions, ...paaQuestions])];
   const sectionQuestions = distributeToSection(allQuestionPhrases, section.sectionIndex, section.totalSections);
-
-  // SEO rules relevant to sections — split by category for clearer AI instructions
-  const allEnabledRules = state.step11?.rules?.filter(r => r.enabled && !['meta-tags', 'schema'].includes(r.id)) || [];
-  const seoRulesSection = allEnabledRules.filter(r => r.category === 'seo' || (r.category !== 'semantic' && r.category !== 'visual'));
-  const semanticRulesSection = allEnabledRules.filter(r => r.category === 'semantic');
-  const rulesBlock = [
-    seoRulesSection.length > 0 ? `\nSEO Rules:\n${seoRulesSection.map(r => `- ${r.fullPrompt}`).join('\n')}` : '',
-    semanticRulesSection.length > 0 ? `\nSEMANTIC WRITING RULES (apply to EVERY sentence):\n${semanticRulesSection.map(r => `- [${r.name}] ${r.fullPrompt}`).join('\n')}` : '',
-  ].filter(Boolean).join('');
-
+  // SEO rules are now injected purely in the System Instruction to prevent duplication and focus loss.
+  const rulesBlock = '';
   // D8+D10: Full grammar/semantic terms including polysemy
   const grammar = state.step10?.grammar;
   const grammarParts: string[] = [];
@@ -268,11 +291,17 @@ export function buildSectionPrompt(
     : 0;
   const lengthMap: Record<string, number> = { short: 150, medium: 300, long: 450, comprehensive: 650 };
   const configTarget = lengthMap[state.step12?.config?.contentLength || 'long'] || 450;
-  // Use the HIGHER of: config target OR (competitor avg + 30%) / totalSections
-  const smartTarget = avgCompetitorWords > 0
-    ? Math.max(configTarget, Math.round((avgCompetitorWords * 1.3) / Math.max(section.totalSections, 1)))
-    : configTarget;
-  const targetWordsPerSection = Math.min(smartTarget, 800); // cap at 800 to avoid bloat
+  // Use config-based targets scaled to total article length
+  const totalLengthMap: Record<string, number> = { short: 800, medium: 1200, long: 2000, comprehensive: 3000 };
+  const totalArticleTarget = totalLengthMap[state.step12?.config?.contentLength || 'long'] || 2000;
+  // Distribute total target across sections (intro ~15%, sections ~70%, conclusion ~15%)
+  const sectionBudget = Math.round((totalArticleTarget * 0.70) / Math.max(section.totalSections, 1));
+  // Also consider competitor average
+  const competitorTarget = avgCompetitorWords > 0
+    ? Math.round((avgCompetitorWords * 1.3 * 0.70) / Math.max(section.totalSections, 1))
+    : 0;
+  // Use the HIGHER of config-based or competitor-based target
+  const targetWordsPerSection = Math.max(sectionBudget, competitorTarget, configTarget);
 
   const coherenceTail = previousTail
     ? `\n\nLAST 150 WORDS OF PREVIOUS SECTION (for narrative continuity — do NOT repeat, just maintain flow):\n"${previousTail}"`
@@ -281,25 +310,64 @@ export function buildSectionPrompt(
   // W19-7: Competitor context for this section topic
   const sectionTopicHint = state.step3?.contents?.[0]?.text
     ? (() => {
-        const heading = section.heading.toLowerCase();
-        const lines = state.step3.contents[0].text.split('\n');
-        const relevant = lines.filter(l => l.length > 30 && heading.split(' ').some(w => w.length > 3 && l.toLowerCase().includes(w)));
-        return relevant.slice(0, 3).join(' ').slice(0, 500);
-      })()
+      const heading = section.heading.toLowerCase();
+      const lines = state.step3.contents[0].text.split('\n');
+      const relevant = lines.filter(l => l.length > 30 && heading.split(' ').some(w => w.length > 3 && l.toLowerCase().includes(w)));
+      return relevant.slice(0, 3).join(' ').slice(0, 500);
+    })()
     : '';
   const competitorHint = sectionTopicHint
     ? `\nCOMPETITOR REFERENCE (beat this — add MORE depth, data, and unique angles):\n"${sectionTopicHint}"`
+    : '';
+
+  const gapAnalysis = state.step2?.merged?.gapAnalysis;
+  const counterNarrative = gapAnalysis?.counterNarrative;
+  let weapon6Block = '';
+  if (counterNarrative) {
+    const hLocal = section.heading.toLowerCase();
+    const hSug = counterNarrative.suggestedH2.toLowerCase();
+    if (hLocal.includes(hSug) || hSug.includes(hLocal) || hLocal.split(' ').some(w => w.length > 4 && hSug.includes(w))) {
+      weapon6Block = `\n\nWEAPON 6 (COUNTER-NARRATIVE): This section MUST challenge the standard industry advice. 
+Standard Advice: "${counterNarrative.standardAdvice}"
+Your Contrarian Take: "${counterNarrative.contrarianTake}"
+Explain why the standard advice is flawed or incomplete, and present the contrarian take as the superior/deeper understanding. This creates massive Information Gain. Format this specifically using <div class="contrarian-take">.`;
+    }
+  }
+
+  let gapDirectives = '';
+  if (gapAnalysis) {
+    const hLocal = section.heading.toLowerCase();
+    const blindSpot = gapAnalysis.blindSpots?.find(b => hLocal.includes(b.heading.toLowerCase()) || b.heading.toLowerCase().includes(hLocal));
+    if (blindSpot) gapDirectives += `\nCOMPETITOR BLIND SPOT (COVER THIS): Competitors missed this entirely. Rationale: ${blindSpot.rationale}. Search Intent to fulfill: ${blindSpot.searchIntent}.`;
+
+    const objection = gapAnalysis.hiddenObjections?.find(o => hLocal.includes(o.suggestedH2.toLowerCase()) || o.suggestedH2.toLowerCase().includes(hLocal));
+    if (objection) gapDirectives += `\nHIDDEN OBJECTION: The reader secretly fears/objects to: "${objection.fearOrObjection}". You MUST address and resolve this fear directly in this section.`;
+
+    const sectionMissingQs = distributeToSection(gapAnalysis.missingQuestions || [], section.sectionIndex, section.totalSections);
+    if (sectionMissingQs.length > 0) gapDirectives += `\nUNANSWERED QUESTIONS (COMPETITOR GAPS): Explicitly answer these questions that competitors ignored: ${sectionMissingQs.join(' | ')}.`;
+
+    const sectionUniqueAngles = distributeToSection(gapAnalysis.uniqueAngles || [], section.sectionIndex, section.totalSections);
+    if (sectionUniqueAngles.length > 0) gapDirectives += `\nUNIQUE ANGLE TO EXPLORE: ${sectionUniqueAngles.join(' | ')}.`;
+  }
+
+  // Reinforcement of critical SEO rules directly in the section prompt (not just system instruction)
+  const enabledRules = state.step11?.rules?.filter(r => r.enabled) || [];
+  const criticalRules = enabledRules.filter(r => ['keyword-density', 'heading-keyword', 'aeo-tldr', 'sge-bait', 'faq', 'meta-tags'].includes(r.id));
+  const rulesReinforcement = criticalRules.length > 0
+    ? `\n\nMANDATORY SEO RULES FOR THIS SECTION:\n${criticalRules.map(r => `⚠️ ${r.name}: ${r.fullPrompt}`).join('\n')}`
     : '';
 
   return `Write section ${section.sectionIndex + 1}/${section.totalSections} for an article about "${keyword}".
 
 SECTION: <h2>${section.heading}</h2>${subOutline}
 
-TARGET: ~${targetWordsPerSection} words for this section.${avgCompetitorWords > 0 ? ` (Competitor avg total: ${avgCompetitorWords} words — you must EXCEED them)` : ''}
-ENTITIES to incorporate in THIS section: ${sectionEntities.join(', ') || 'use general topic entities'}
-N-GRAMS to use: ${sectionNgrams.join(', ') || 'none assigned'}
+🎯 WORD COUNT TARGET: EXACTLY ${targetWordsPerSection} words (±10%). This is NON-NEGOTIABLE. Count your words before finishing. If under ${Math.round(targetWordsPerSection * 0.9)}, add more depth and examples. If over ${Math.round(targetWordsPerSection * 1.1)}, cut fluff.
+TOTAL ARTICLE TARGET: ${totalArticleTarget} words across ${section.totalSections} sections + intro + conclusion.
+
+ENTITIES to incorporate in THIS section (MANDATORY — use ALL): ${sectionEntities.join(', ') || 'use general topic entities'}
+N-GRAMS to use (MANDATORY): ${sectionNgrams.join(', ') || 'none assigned'}
 SKIP-GRAMS: ${sectionSkipGrams.join(', ') || 'none assigned'}${wsdHint}${sectionTechKws.length > 0 ? `\nTECHNICAL KEYWORDS: ${sectionTechKws.join(', ')}` : ''}${sectionSumWords.length > 0 ? `\nDOMINANT TOPIC WORDS: ${sectionSumWords.join(', ')}` : ''}${sectionGenPhrases.length > 0 ? `\nSTRATEGIC PHRASES: ${sectionGenPhrases.join(', ')}` : ''}${sectionAutoKws.length > 0 ? `\nAUTOCOMPLETE QUERIES to address: ${sectionAutoKws.join(', ')}` : ''}${sectionSuggestedKws.length > 0 ? `\nSUGGESTED KEYWORDS to weave in: ${sectionSuggestedKws.join(', ')}` : ''}${sectionRelated.length > 0 ? `\nRELATED SEARCHES (use as LSI keywords): ${sectionRelated.join(', ')}` : ''}${sectionQuestions.length > 0 ? `\nQUESTION PHRASES to answer in this section: ${sectionQuestions.join(' | ')}` : ''}
-KEYWORDS: ${kwSlice}${grammarBlock}${rulesBlock}${aeoBlock(state)}${competitorHint}${coherenceTail}
+KEYWORDS: ${kwSlice}${grammarBlock}${rulesBlock}${rulesReinforcement}${aeoBlock(state)}${competitorHint}${coherenceTail}${weapon6Block}${gapDirectives}
 
 FEATURED SNIPPET OPTIMIZATION: If this section answers a "what is", "how to", or comparison query, format the answer in the first 40-50 words as a DIRECT, concise definition or step list that Google can extract as a Featured Snippet.
 

@@ -24,13 +24,11 @@ export function SchemaGenerator({ keyword, store }: SchemaGeneratorProps) {
             const title = store.step2?.merged?.title || keyword;
             const entities: string[] = [];
             if (store.step4?.merged) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 for (const items of Object.values(store.step4.merged.entities)) {
                     for (const e of items as { name: string }[]) entities.push(e.name);
                 }
             }
             if (store.step5?.aiEntities) entities.push(...store.step5.aiEntities.entities);
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const questions = store.step7?.combined?.foundInContent?.questionPhrases?.map((k: { term: string }) => k.term) || [];
             const today = new Date().toISOString().split('T')[0];
 

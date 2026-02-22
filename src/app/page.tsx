@@ -29,10 +29,12 @@ export default function Home() {
   const [cloudProjects, setCloudProjects] = useState<ProjectSummary[]>([]);
   const [loadingCloud, setLoadingCloud] = useState(false);
   const [showBulk, setShowBulk] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   const hasSaved = !!keyword;
 
   useEffect(() => {
+    setIsMounted(true);
     async function fetchProjects() {
       setLoadingCloud(true);
       try {
@@ -82,12 +84,27 @@ export default function Home() {
 
   // S6: Stats
   const stats = useMemo(() => {
+    if (!isMounted) return { total: 0, completed: 0, sites: 0 };
+
     const uniqueDomains = new Set(cloudProjects.map(p => p.domain).filter(Boolean));
     const total = cloudProjects.length + (hasSaved ? 1 : 0);
     const completed = cloudProjects.filter(p => p.currentStep >= 13).length + (completedSteps === 13 ? 1 : 0);
     const sites = uniqueDomains.size;
     return { total, completed, sites };
-  }, [cloudProjects, hasSaved, completedSteps]);
+  }, [cloudProjects, hasSaved, completedSteps, isMounted]);
+
+  // To perfectly avoid hydration errors, we can also defer rendering of the action buttons
+  // that rely on `hasSaved` (which implicitly relies on localStorage)
+  if (!isMounted) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-pulse flex items-center gap-3 text-muted-foreground">
+          <Sparkles className="w-5 h-5" />
+          <span>Loading Dashboard...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

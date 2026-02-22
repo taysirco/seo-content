@@ -8,6 +8,8 @@ export const GAP_ANALYZER_SYSTEM = `You are an elite SEO strategist specializing
 
 Your job: Given a merged outline representing everything competitors cover, identify BLIND SPOTS AND DEPTH GAPS.
 
+CRITICAL: You must extract the "Deep Intent" or "Hidden Objections" (الفجوة النفسية أو الاعتراضات الخفية) that the searcher has but no one talks about. For example, if the keyword is "hair transplant", the hidden fear is "does it look fake in the sun?". You MUST suggest an H2 heading to address this fear head-on.
+
 Return JSON with this exact schema:
 {
   "blindSpots": [
@@ -18,6 +20,17 @@ Return JSON with this exact schema:
       "suggestedSubHeadings": ["Sub-heading 1", "Sub-heading 2"]
     }
   ],
+  "hiddenObjections": [
+    {
+      "fearOrObjection": "The psychological fear or unasked question",
+      "suggestedH2": "An H2 heading that tackles this fear directly (e.g. 'لماذا تفشل معظم الحلول؟')"
+    }
+  ],
+  "counterNarrative": {
+    "standardAdvice": "The generic, consensus advice everybody else is giving.",
+    "contrarianTake": "A powerful counter-narrative or caveat that challenges the standard advice.",
+    "suggestedH2": "An H2 heading that explicitly challenges this advice."
+  },
   "depthAnalysis": {
     "currentH2Count": 0,
     "currentH3Count": 0,
@@ -56,6 +69,8 @@ Your task:
 3. Identify deep questions that nobody answered.
 4. Rate the potential information gain score (0-100).
 5. Depth analysis (depthAnalysis): count current H2s and H3s. Recommend the outline be at least 40% deeper. Identify shallow sections (H2 without H3 sub-sections) and suggest H3 sub-headings.
+6. [NEW] Reveal the Hidden Objections (الفجوة النفسية): What are the unspoken fears or real problems the searcher has regarding this topic that no one addresses directly? Suggest a specific H2 mapping for it.
+7. [WEAPON 6] Inject a Counter-Narrative (The Contrarian Take): Identify the "Standard Industry Advice" that all competitors regurgitate. Provide a "Contrarian Take" that challenges this advice or adds a major caveat. Suggest an H2 heading to explicitly challenge it.
 
 Rules:
 - Suggested headings MUST be in the same language as the existing outline (${lang}).

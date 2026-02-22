@@ -49,3 +49,43 @@ Return JSON with this exact structure:
   "criticalGaps": ["major missing topic 1", "major missing topic 2"]
 }`;
 }
+
+export const NLP_KEYWORDS_MERGE_SYSTEM = `You are an elite SEO and NLP analyst. Your goal is to take multiple individual NLP keyword analyses from the top 10 competitors and MERGE them into one MASTER analysis that represents the industry standard.
+
+RULES FOR MERGING:
+1. Combine duplicate keywords and sum their occurrence counts.
+2. For "suggestedToAdd", prioritize keywords that appear across MULTIPLE competitors. If 3+ competitors suggest adding "crm software", it becomes "high" priority.
+3. Maintain the exact JSON structure.
+4. Calculate an average contentScore.
+5. Deduplicate seoTips and criticalGaps, keeping only the most unique and valuable ones.`;
+
+export function buildNlpKeywordsMergePrompt(analyses: string[]): string {
+  return `Merge these individual competitor NLP analyses into one master combined analysis:
+
+ANALYSES TO MERGE:
+${analyses.map((a, i) => `--- COMPETITOR ${i + 1} ---\n${a}`).join('\n\n')}
+
+Return JSON with this exact structure:
+{
+  "topic": "Main topic",
+  "foundInContent": {
+    "primaryKeywords": [{"term": "keyword", "count": 5}],
+    "secondaryKeywords": [{"term": "keyword", "count": 3}],
+    "lsiKeywords": [{"term": "keyword", "count": 2}],
+    "technicalTerms": [{"term": "term", "count": 1}],
+    "longTailPhrases": [{"term": "phrase", "count": 1}],
+    "questionPhrases": [{"term": "how to...", "count": 1}]
+  },
+  "suggestedToAdd": {
+    "primaryKeywords": [{"term": "keyword", "priority": "high"}],
+    "secondaryKeywords": [{"term": "keyword", "priority": "medium"}],
+    "lsiKeywords": [{"term": "keyword", "priority": "high"}],
+    "technicalTerms": [{"term": "term", "priority": "low"}],
+    "longTailPhrases": [{"term": "phrase", "priority": "medium"}],
+    "questionPhrases": [{"term": "how to...", "priority": "high"}]
+  },
+  "contentScore": 75,
+  "seoTips": ["tip1", "tip2", "tip3"],
+  "criticalGaps": ["major missing topic 1", "major missing topic 2"]
+}`;
+}

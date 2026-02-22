@@ -38,16 +38,10 @@ export function Stepper() {
       case 1: return !!store.step1 && store.step1.competitors.some(c => c.selected);
       case 2: return !!store.step2?.merged;
       case 3: return !!store.step3 && store.step3.contents.some(c => c.wordCount > 0);
-      case 4: return !!store.step4?.merged;
-      case 5: return !!store.step5;
-      case 6: return !!store.step6;
-      case 7: return !!store.step7?.combined;
-      case 8: return !!store.step8;
-      case 9: return !!store.step9;
-      case 10: return !!store.step10;
-      case 11: return !!store.step11;
-      case 12: return !!store.step12;
-      case 13: return !!store.step13;
+      case 4: return !!store.step4?.perCompetitor?.length || !!store.step4?.merged || !!store.step7?.combined || !!store.step5; // Semantic engine has at least some data
+      case 5: return !!store.step11;
+      case 6: return !!store.step12;
+      case 7: return !!store.step13;
       default: return false;
     }
   };
@@ -62,8 +56,7 @@ export function Stepper() {
 
   // Dependency map: which steps must be complete before a step is reachable
   const STEP_DEPS: Record<number, number[]> = {
-    1: [], 2: [1], 3: [1], 4: [3], 5: [], 6: [3], 7: [3],
-    8: [], 9: [], 10: [], 11: [], 12: [], 13: [2, 11, 12],
+    1: [], 2: [1], 3: [1], 4: [3], 5: [], 6: [], 7: [2, 5, 6],
   };
 
   const isStepReachable = (stepNumber: number): boolean => {

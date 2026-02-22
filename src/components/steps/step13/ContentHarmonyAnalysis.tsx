@@ -7,7 +7,6 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Zap, CheckCircle, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
-import { callGemini } from '@/lib/ai-client';
 import type { PipelineState } from '@/types/pipeline';
 
 interface ContentHarmonyAnalysisProps {
@@ -65,14 +64,20 @@ export function ContentHarmonyAnalysis({ content, keyword, store }: ContentHarmo
         }
       `;
 
-            const response = await callGemini({
-                systemInstruction: 'You are an expert Content Strategist analyzing semantic alignment.',
-                userPrompt: prompt,
-                temperature: 0.2, // Low temp for analysis
-                jsonMode: true
+            const response = await fetch('/api/ai/tool', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    systemInstruction: 'You are an expert Content Strategist analyzing semantic alignment.',
+                    userPrompt: prompt,
+                    temperature: 0.2,
+                    jsonMode: true
+                }),
             });
 
-            const parsed = JSON.parse(response);
+            if (!response.ok) throw new Error('API Error');
+            const data = await response.json();
+            const parsed = JSON.parse(data.result);
             setResult(parsed);
             toast.success('تم تحليل التناغم الدلالي');
         } catch (error) {
@@ -100,7 +105,7 @@ export function ContentHarmonyAnalysis({ content, keyword, store }: ContentHarmo
             </CardHeader>
             <CardContent>
                 {!result ? (
-                    <p className="text-sm text-muted-foreground">اضغط "تحليل" للتحقق من توافق العنوان والمقدمة والخاتمة.</p>
+                    <p className="text-sm text-muted-foreground">اضغط &quot;تحليل&quot; للتحقق من توافق العنوان والمقدمة والخاتمة.</p>
                 ) : (
                     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
                         <div className="flex items-center justify-between">
@@ -152,6 +157,6 @@ export function ContentHarmonyAnalysis({ content, keyword, store }: ContentHarmo
                     </div>
                 )}
             </CardContent>
-        </Card>
+        </Card >
     );
 }

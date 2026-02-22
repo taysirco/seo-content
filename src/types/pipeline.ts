@@ -35,6 +35,15 @@ export interface MergedOutline {
   title: string;
   headings: HeadingItem[];
   summary: string;
+  gapAnalysis?: {
+    blindSpots: { heading: string; rationale: string; searchIntent: string; suggestedSubHeadings: string[] }[];
+    hiddenObjections?: { fearOrObjection: string; suggestedH2: string }[];
+    counterNarrative?: { standardAdvice: string; contrarianTake: string; suggestedH2: string };
+    depthAnalysis: { currentH2Count: number; currentH3Count: number; recommendedH2Count: number; recommendedH3Count: number; depthScore: number; shallowSections: string[]; suggestedSubSections: { parentH2: string; newH3: string }[] };
+    missingQuestions: string[];
+    uniqueAngles: string[];
+    informationGainScore: number;
+  };
 }
 
 // ─── Step 3 ───
@@ -160,6 +169,7 @@ export interface SEORule {
 export interface WritingConfig {
   tone: 'professional' | 'casual' | 'academic' | 'conversational' | 'authoritative';
   voice: 'first_person' | 'third_person' | 'impersonal';
+  persona: 'default' | 'doctor' | 'engineer' | 'marketer' | 'lawyer' | 'chef' | 'reviewer';
   audience: 'general' | 'specialists' | 'business_owners' | 'students';
   contentLength: 'short' | 'medium' | 'long' | 'comprehensive';
   languageStyle: 'msa' | 'colloquial' | 'mixed' | 'formal' | 'informal';
@@ -216,6 +226,8 @@ export interface PipelineState {
   step11: { rules: SEORule[] } | null;
   step12: { config: WritingConfig; instructions: string } | null;
   step13: { content: string; generatedAt: string } | null;
+  // Weapon 4: Semantic Silo - Internal project links to weave into content
+  internalLinks?: { keyword: string; url: string; projectId: string }[];
   // W17-4: Publishing workflow status
   publishStatus?: 'draft' | 'review' | 'approved' | 'published';
 }
@@ -234,14 +246,8 @@ export const STEPS_META: StepMeta[] = [
   { number: 1, titleAr: 'بحث المنافسين', titleEn: 'Competitor Research', icon: 'Search', type: 'data', hasAI: false },
   { number: 2, titleAr: 'إنشاء المخطط', titleEn: 'Outline Creation', icon: 'List', type: 'ai', hasAI: true },
   { number: 3, titleAr: 'استخراج المحتوى', titleEn: 'Content Extraction', icon: 'FileText', type: 'data', hasAI: false },
-  { number: 4, titleAr: 'الكيانات (المنافسين)', titleEn: 'Entities (Competitors)', icon: 'Users', type: 'ai', hasAI: true },
-  { number: 5, titleAr: 'الكيانات (AI)', titleEn: 'Entities (AI)', icon: 'Brain', type: 'ai', hasAI: true },
-  { number: 6, titleAr: 'N-Grams', titleEn: 'N-Grams', icon: 'Hash', type: 'ai', hasAI: true },
-  { number: 7, titleAr: 'كلمات NLP', titleEn: 'NLP Keywords', icon: 'Key', type: 'ai', hasAI: true },
-  { number: 8, titleAr: 'Skip-Grams', titleEn: 'Skip-Grams', icon: 'Shuffle', type: 'ai', hasAI: true },
-  { number: 9, titleAr: 'اقتراحات تلقائية', titleEn: 'Auto Suggest', icon: 'Lightbulb', type: 'data', hasAI: true },
-  { number: 10, titleAr: 'المولد اللغوي', titleEn: 'Grammar Generator', icon: 'BookOpen', type: 'ai', hasAI: true },
-  { number: 11, titleAr: 'قواعد SEO', titleEn: 'SEO Rules', icon: 'Shield', type: 'config', hasAI: false },
-  { number: 12, titleAr: 'تعليمات الكتابة', titleEn: 'AI Instructions', icon: 'Settings', type: 'config', hasAI: false },
-  { number: 13, titleAr: 'المحتوى النهائي', titleEn: 'Final Content', icon: 'Sparkles', type: 'ai', hasAI: true },
+  { number: 4, titleAr: 'المحرك الدلالي', titleEn: 'Semantic Engine', icon: 'Brain', type: 'ai', hasAI: true },
+  { number: 5, titleAr: 'قواعد SEO', titleEn: 'SEO Rules', icon: 'Shield', type: 'config', hasAI: false },
+  { number: 6, titleAr: 'تعليمات الكتابة', titleEn: 'AI Instructions', icon: 'Settings', type: 'config', hasAI: false },
+  { number: 7, titleAr: 'المحتوى النهائي', titleEn: 'Final Content', icon: 'Sparkles', type: 'ai', hasAI: true },
 ];

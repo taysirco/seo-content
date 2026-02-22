@@ -136,9 +136,8 @@ export function Step11SEORules() {
                 {group.rules.map((rule: SEORule) => (
                   <div
                     key={rule.id}
-                    className={`flex items-start gap-4 p-4 rounded-lg border transition-colors ${
-                      rule.enabled ? 'bg-primary/5 border-primary/30' : 'bg-muted/20'
-                    }`}
+                    className={`flex items-start gap-4 p-4 rounded-lg border transition-colors ${rule.enabled ? 'bg-primary/5 border-primary/30' : 'bg-muted/20'
+                      }`}
                   >
                     <Switch
                       checked={rule.enabled}
